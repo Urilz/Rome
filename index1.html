@@ -11,7 +11,529 @@
       --primary: #4a6fa5;
       --text: #2c3e50;
       --border: #e2e8f0;
+      --accent: #e67e22;<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול הוצאות משותפות</title>
+  <style>
+    :root {
+      --bg-color: #fdfbf7;
+      --card-bg: #ffffff;
+      --primary: #4a6fa5;
+      --text: #2c3e50;
+      --border: #e2e8f0;
       --accent: #e67e22;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0;
+      padding: 15px;
+      padding-bottom: 150px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .version-tag {
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 15px;
+      border: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 0.9em;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 1em;
+    }
+
+    button.btn-submit {
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 1em;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button.btn-cancel {
+      width: 100%;
+      background-color: #95a5a6;
+      color: white;
+      border: none;
+      padding: 8px;
+      font-size: 0.9em;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 5px;
+      display: none;
+    }
+
+    details {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    summary {
+      padding: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85em;
+    }
+
+    th, td {
+      padding: 8px 4px;
+      text-align: right;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f1f5f9;
+    }
+
+    .family-total-row {
+      font-weight: bold;
+      background-color: #f8fafc;
+      border-top: 2px solid var(--border);
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1em;
+      padding: 0 3px;
+    }
+
+    .btn-edit { color: #2980b9; }
+    .btn-delete { color: #e74c3c; }
+
+    .footer-summary {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-top: 2px solid var(--primary);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      font-size: 0.82em;
+      z-index: 1000;
+    }
+
+    .footer-content {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .footer-line {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 2px;
+    }
+
+    .footer-line.final {
+      border-bottom: none;
+      font-weight: bold;
+      color: var(--accent);
+      font-size: 1.05em;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <span class="version-tag">v1.0.2</span>
+  <h2>ניהול הוצאות משותפות</h2>
+
+  <!-- טופס -->
+  <div class="card">
+    <h3 id="formTitle" style="margin-top:0; font-size:1.1em;">הוספת הוצאה חדשה</h3>
+    <form id="expenseForm">
+      <input type="hidden" id="editExpenseId" value="">
+
+      <div class="form-group">
+        <label>תאריך *</label>
+        <input type="date" id="expDate" required>
+      </div>
+
+      <div class="form-group">
+        <label>סעיף / תיאור (עברית בלבד) *</label>
+        <input type="text" id="expDesc" required pattern="[\u0590-\u05FF\s]+" title="נא להזין אותיות בעברית בלבד">
+      </div>
+
+      <div class="form-group">
+        <label>סכום *</label>
+        <input type="number" step="any" id="expAmount" required min="0.01">
+      </div>
+
+      <div class="form-group">
+        <label>מטבע *</label>
+        <select id="expCurrency" required>
+          <option value="ILS">₪ (ש"ח)</option>
+          <option value="EUR">€ (יורו)</option>
+          <option value="USD">$ (דולר)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>משלם *</label>
+        <select id="expPayer" required>
+          <option value="">בחר משלם...</option>
+          <option value="אלחנן">אלחנן</option>
+          <option value="רוית">רוית</option>
+          <option value="אורי">אורי</option>
+          <option value="אדוה">אדוה</option>
+        </select>
+      </div>
+
+      <button type="submit" id="btnSubmit" class="btn-submit">הוסף הוצאה</button>
+      <button type="button" id="btnCancelEdit" class="btn-cancel" onclick="resetForm()">ביטול עריכה</button>
+    </form>
+  </div>
+
+  <!-- פירוט לפי משפחה -->
+  <h3>פירוט הוצאות</h3>
+  
+  <details id="acc-ben-rachamim">
+    <summary>
+      <span>משפחת בן רחמים (אלחנן ורוית)</span>
+      <span id="sum-ben-rachamim">0 ₪</span>
+    </summary>
+    <table>
+      <thead>
+        <tr>
+          <th>תאריך</th>
+          <th>תיאור</th>
+          <th>משלם</th>
+          <th>סכום במקור</th>
+          <th>בש"ח</th>
+          <th>פעולות</th>
+        </tr>
+      </thead>
+      <tbody id="list-ben-rachamim"></tbody>
+      <tfoot>
+        <tr class="family-total-row">
+          <td colspan="4">סה"כ הוצאות למשפחה:</td>
+          <td id="foot-ben-rachamim" colspan="2">0 ₪</td>
+        </tr>
+      </tfoot>
+    </table>
+  </details>
+
+  <details id="acc-lazarovsky">
+    <summary>
+      <span>משפחת לזרובסקי (אורי ואדוה)</span>
+      <span id="sum-lazarovsky">0 ₪</span>
+    </summary>
+    <table>
+      <thead>
+        <tr>
+          <th>תאריך</th>
+          <th>תיאור</th>
+          <th>משלם</th>
+          <th>סכום במקור</th>
+          <th>בש"ח</th>
+          <th>פעולות</th>
+        </tr>
+      </thead>
+      <tbody id="list-lazarovsky"></tbody>
+      <tfoot>
+        <tr class="family-total-row">
+          <td colspan="4">סה"כ הוצאות למשפחה:</td>
+          <td id="foot-lazarovsky" colspan="2">0 ₪</td>
+        </tr>
+      </tfoot>
+    </table>
+  </details>
+
+</div>
+
+<!-- תחתית דף קבועה -->
+<div class="footer-summary">
+  <div class="footer-content">
+    <div class="footer-line">
+      <span>סה"כ הוצאות בש"ח:</span>
+      <span id="total-all-ils">0 ₪</span>
+    </div>
+    <div class="footer-line">
+      <span>סה"כ משפחת בן רחמים:</span>
+      <span id="total-ben-rachamim-footer">0 ₪</span>
+    </div>
+    <div class="footer-line">
+      <span>סה"כ משפחת לזרובסקי:</span>
+      <span id="total-lazarovsky-footer">0 ₪</span>
+    </div>
+    <div class="footer-line final">
+      <span>התחשבנות סופית:</span>
+      <span id="final-settlement">-</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // *** יש להדביק את הקישור שלך כאן ***
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
+  const ADMIN_PIN = "7350";
+
+  let expenses = [];
+
+  // עיצוב סכום ללא ספרות עשרוניות ועם פסיק מפריד
+  function formatMoney(num) {
+    return Math.round(Number(num) || 0).toLocaleString('he-IL');
+  }
+
+  document.getElementById('expDate').valueAsDate = new Date();
+
+  // הגבלה להקלדת עברית בלבד
+  document.getElementById('expDesc').addEventListener('input', function() {
+    this.value = this.value.replace(/[^\u0590-\u05FF\s]/g, '');
+  });
+
+  window.addEventListener('DOMContentLoaded', fetchExpenses);
+
+  async function fetchExpenses() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT_URL")) return;
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL);
+      expenses = await res.json();
+      renderApp();
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  }
+
+  function getFamily(payer) {
+    if (payer === 'אלחנן' || payer === 'רוית') return 'ben-rachamim';
+    if (payer === 'אורי' || payer === 'אדוה') return 'lazarovsky';
+    return '';
+  }
+
+  function checkAdmin() {
+    const pin = prompt("הזן קוד מנהל לבדיקת הרשאה:");
+    if (pin === ADMIN_PIN) return true;
+    alert("קוד שגוי!");
+    return false;
+  }
+
+  document.getElementById('expenseForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const editId = document.getElementById('editExpenseId').value;
+    const isEditMode = Boolean(editId);
+
+    const expenseData = {
+      id: isEditMode ? editId : Date.now().toString(),
+      date: document.getElementById('expDate').value,
+      desc: document.getElementById('expDesc').value.trim(),
+      amount: parseFloat(document.getElementById('expAmount').value),
+      currency: document.getElementById('expCurrency').value,
+      payer: document.getElementById('expPayer').value,
+      splitA: 50
+    };
+
+    if (isEditMode) {
+      const index = expenses.findIndex(x => x.id == editId);
+      if (index !== -1) expenses[index] = expenseData;
+    } else {
+      expenses.push(expenseData);
+    }
+
+    renderApp();
+    resetForm();
+
+    try {
+      if (isEditMode) {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'delete', id: editId })
+        });
+      }
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'add', ...expenseData })
+      });
+    } catch (err) {
+      alert("שגיאה בסנכרון מול הענן");
+    }
+  });
+
+  function startEdit(id) {
+    if (!checkAdmin()) return;
+
+    const item = expenses.find(x => x.id == id);
+    if (!item) return;
+
+    document.getElementById('editExpenseId').value = item.id;
+    document.getElementById('expDate').value = item.date;
+    document.getElementById('expDesc').value = item.desc;
+    document.getElementById('expAmount').value = item.amount;
+    document.getElementById('expCurrency').value = item.currency;
+    document.getElementById('expPayer').value = item.payer;
+
+    document.getElementById('formTitle').innerText = "עריכת הוצאה";
+    document.getElementById('btnSubmit').innerText = "עדכן הוצאה";
+    document.getElementById('btnCancelEdit').style.display = "block";
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('expenseForm').reset();
+    document.getElementById('editExpenseId').value = "";
+    document.getElementById('expDate').valueAsDate = new Date();
+    document.getElementById('formTitle').innerText = "הוספת הוצאה חדשה";
+    document.getElementById('btnSubmit').innerText = "הוסף הוצאה";
+    document.getElementById('btnCancelEdit').style.display = "none";
+  }
+
+  async function deleteExpense(id) {
+    if (!checkAdmin()) return;
+    if (!confirm("האם למחוק הוצאה זו?")) return;
+
+    expenses = expenses.filter(x => x.id != id);
+    renderApp();
+
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete', id: id })
+      });
+    } catch (err) {
+      alert("שגיאה במחיקת הנתונים מהענן");
+    }
+  }
+
+  function renderApp() {
+    const listBR = document.getElementById('list-ben-rachamim');
+    const listLZ = document.getElementById('list-lazarovsky');
+
+    listBR.innerHTML = '';
+    listLZ.innerHTML = '';
+
+    let sumBR = 0;
+    let sumLZ = 0;
+
+    expenses.forEach(item => {
+      const family = getFamily(item.payer);
+      
+      let amountILS = item.amount;
+      let symbol = '₪';
+      if (item.currency === 'EUR') { symbol = '€'; amountILS = item.amount * 4.0; }
+      if (item.currency === 'USD') { symbol = '$'; amountILS = item.amount * 3.7; }
+
+      if (family === 'ben-rachamim') sumBR += amountILS;
+      if (family === 'lazarovsky') sumLZ += amountILS;
+
+      const rowHtml = `
+        <tr>
+          <td>${item.date}</td>
+          <td>${item.desc}</td>
+          <td>${item.payer}</td>
+          <td>${formatMoney(item.amount)} ${symbol}</td>
+          <td>${formatMoney(amountILS)} ₪</td>
+          <td>
+            <button class="action-btn btn-edit" title="ערוך" onclick="startEdit('${item.id}')">✎</button>
+            <button class="action-btn btn-delete" title="מחק" onclick="deleteExpense('${item.id}')">✕</button>
+          </td>
+        </tr>
+      `;
+
+      if (family === 'ben-rachamim') listBR.innerHTML += rowHtml;
+      if (family === 'lazarovsky') listLZ.innerHTML += rowHtml;
+    });
+
+    const strBR = formatMoney(sumBR) + " ₪";
+    const strLZ = formatMoney(sumLZ) + " ₪";
+
+    document.getElementById('sum-ben-rachamim').innerText = strBR;
+    document.getElementById('foot-ben-rachamim').innerText = strBR;
+
+    document.getElementById('sum-lazarovsky').innerText = strLZ;
+    document.getElementById('foot-lazarovsky').innerText = strLZ;
+
+    const totalAll = sumBR + sumLZ;
+    document.getElementById('total-all-ils').innerText = formatMoney(totalAll) + " ₪";
+    document.getElementById('total-ben-rachamim-footer').innerText = strBR;
+    document.getElementById('total-lazarovsky-footer').innerText = strLZ;
+
+    const half = totalAll / 2;
+    const diff = sumBR - half;
+    
+    const finalElem = document.getElementById('final-settlement');
+    if (Math.abs(diff) < 1) {
+      finalElem.innerText = "החשבון מאוזן!";
+    } else if (diff > 0) {
+      finalElem.innerText = `משפחת לזרובסקי מעבירה לבן רחמים: ${formatMoney(diff)} ₪`;
+    } else {
+      finalElem.innerText = `משפחת בן רחמים מעבירה ללזרובסקי: ${formatMoney(Math.abs(diff))} ₪`;
+    }
+  }
+</script>
+
+</body>
+</html>
     }
 
     body {
