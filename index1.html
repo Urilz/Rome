@@ -37,7 +37,7 @@
 
     .container {
       width: 100%;
-      max-width: 500px;
+      max-width: 680px;
       margin: 0 auto;
       padding: 16px 16px 40px 16px;
     }
@@ -51,18 +51,11 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.03);
     }
 
-    .title-input {
-      width: 100%;
-      border: none;
-      background: transparent;
-      font-size: 24px;
+    .main-title {
+      font-size: 26px;
       font-weight: 700;
       color: var(--text);
-      margin-bottom: 4px;
-      outline: none;
-    }
-    .title-input:focus {
-      border-bottom: 2px dashed var(--teal);
+      margin: 0 0 4px 0;
     }
 
     .subtitle {
@@ -81,7 +74,7 @@
     .couple-box {
       background: rgba(255, 255, 255, 0.6);
       border-radius: 10px;
-      padding: 10px;
+      padding: 12px;
     }
 
     .couple-title {
@@ -89,7 +82,7 @@
       align-items: center;
       gap: 6px;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 14px;
       margin-bottom: 8px;
     }
 
@@ -101,15 +94,10 @@
     .dot-a { background: var(--teal); }
     .dot-b { background: var(--rust); }
 
-    .name-input {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 8px;
-      font-size: 12px;
-      background: #fff;
-      margin-bottom: 4px;
+    .names-list {
+      font-size: 13px;
       color: var(--text);
+      line-height: 1.5;
     }
 
     /* כרטיסים כלליים */
@@ -145,12 +133,13 @@
 
     input[type="text"],
     input[type="number"],
+    input[type="date"],
     select {
       width: 100%;
-      padding: 12px;
+      padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      font-size: 16px; /* 16px מונע זום אוטומטי באייפון */
+      font-size: 15px;
       background: #FFFDF9;
       color: var(--text);
       outline: none;
@@ -232,45 +221,31 @@
       margin-top: 8px;
     }
 
-    /* רשימת הוצאות */
-    .expense-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px dashed var(--border);
-    }
-    .expense-item:last-child {
-      border-bottom: none;
+    /* טבלאות */
+    .table-container {
+      overflow-x: auto;
     }
 
-    .exp-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: right;
     }
 
-    .exp-bar {
-      width: 4px;
-      height: 32px;
-      border-radius: 2px;
-    }
-    .exp-bar.a { background: var(--teal); }
-    .exp-bar.b { background: var(--rust); }
-
-    .exp-title {
-      font-weight: 600;
-      font-size: 14px;
-    }
-    .exp-sub {
-      font-size: 11px;
-      color: var(--text-muted);
+    th {
+      background-color: var(--header-bg);
+      color: var(--text);
+      padding: 8px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
     }
 
-    .exp-amount {
-      font-weight: 700;
-      font-size: 15px;
-      direction: ltr;
+    td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      white-space: nowrap;
     }
 
     .delete-btn {
@@ -279,8 +254,7 @@
       color: #cc0000;
       font-size: 16px;
       cursor: pointer;
-      padding: 4px 8px;
-      margin-right: 4px;
+      padding: 2px 6px;
     }
 
     /* חלון קופץ לשינוי חלוקה */
@@ -334,14 +308,27 @@
       background: var(--header-bg);
       border-radius: 14px;
       padding: 20px;
-      text-align: center;
     }
 
-    .summary-result {
-      font-size: 18px;
+    .summary-table th {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .summary-result-box {
+      background: #FFFFFF;
+      border: 2px solid var(--teal);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .summary-final-text {
+      font-size: 20px;
       font-weight: 700;
-      margin-top: 10px;
       line-height: 1.4;
+      margin-top: 4px;
     }
 
     .empty-msg {
@@ -358,19 +345,23 @@
 
   <!-- כותרת וזוגות -->
   <div class="header-card">
-    <input type="text" id="tripTitle" class="title-input" value="רומא ודרומה">
+    <h1 class="main-title">רומא ודרומה</h1>
     <div class="subtitle">ניהול הוצאות משותפות</div>
 
     <div class="couples-grid">
       <div class="couple-box">
-        <div class="couple-title"><span class="dot dot-a"></span>זוג א'</div>
-        <input type="text" id="pA1" class="name-input" value="אורי">
-        <input type="text" id="pA2" class="name-input" value="אדוה">
+        <div class="couple-title"><span class="dot dot-a"></span>משפחת בן רחמים</div>
+        <div class="names-list">
+          <div>אורי</div>
+          <div>אדוה</div>
+        </div>
       </div>
       <div class="couple-box">
-        <div class="couple-title"><span class="dot dot-b"></span>זוג ב'</div>
-        <input type="text" id="pB1" class="name-input" value="אלחנן">
-        <input type="text" id="pB2" class="name-input" value="רוית">
+        <div class="couple-title"><span class="dot dot-b"></span>משפחת לזרובסקי</div>
+        <div class="names-list">
+          <div>אלחנן</div>
+          <div>רוית</div>
+        </div>
       </div>
     </div>
   </div>
@@ -379,9 +370,15 @@
   <div class="card">
     <div class="card-title">הוספת הוצאה</div>
     
-    <div class="form-group">
-      <label>תיאור ההוצאה</label>
-      <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק">
+    <div class="grid-2 form-group">
+      <div>
+        <label>תאריך</label>
+        <input type="date" id="expDate" min="2026-06-01">
+      </div>
+      <div>
+        <label>תיאור ההוצאה</label>
+        <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק">
+      </div>
     </div>
 
     <div class="grid-2 form-group">
@@ -415,10 +412,25 @@
     <button type="button" class="submit-btn" onclick="addExpense()">הוסף הוצאה</button>
   </div>
 
-  <!-- רשימת הוצאות -->
+  <!-- רשימת הוצאות בטבלה -->
   <div class="card">
-    <div class="card-title">הוצאות שנרשמו</div>
-    <div id="expensesList"></div>
+    <div class="card-title">הוצאות ששולמו</div>
+    <div class="table-container">
+      <table id="expensesTable">
+        <thead>
+          <tr>
+            <th>תאריך</th>
+            <th>תיאור</th>
+            <th>סכום במקור</th>
+            <th>סכום ב-₪</th>
+            <th>משלם</th>
+            <th>חלוקה</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="expensesList"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- שערי המרה -->
@@ -436,10 +448,30 @@
     </div>
   </div>
 
-  <!-- סיכום -->
+  <!-- פירוט וסיכום סופי -->
   <div class="summary-card">
-    <div style="font-size:14px; font-weight:600; color:var(--text-muted);">סיכום חשבון סופי</div>
-    <div class="summary-result" id="summaryText">אין עדיין הוצאות</div>
+    <div style="font-size:16px; font-weight:700; color:var(--text); margin-bottom:12px;">סיכום חשבון חודשי ופירוט חישוב</div>
+    
+    <div class="table-container">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>משפחה</th>
+            <th>שילמו בפועל (₪)</th>
+            <th>חלקן בהוצאות (₪)</th>
+            <th>מאזן / הפרש (₪)</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody">
+          <tr><td colspan="4" class="empty-msg">אין עדיין נתונים לחישוב</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-result-box">
+      <div style="font-size:12px; font-weight:600; color:var(--text-muted);">בשורה התחתונה:</div>
+      <div class="summary-final-text" id="summaryFinalText">אין עדיין הוצאות</div>
+    </div>
   </div>
 
 </div>
@@ -447,7 +479,7 @@
 <!-- חלון קופץ לחלוקה -->
 <div class="modal" id="splitModal" hidden>
   <div class="modal-content">
-    <div style="font-weight:700; margin-bottom:10px;">אחוז השתתפות זוג א'</div>
+    <div style="font-weight:700; margin-bottom:10px;">אחוז השתתפות בן רחמים</div>
     <input type="range" id="splitRange" class="range-slider" min="0" max="100" value="50" oninput="updateModalLabel(this.value)">
     <div id="modalLabel" style="font-weight:700; font-size:16px; margin-bottom:16px;">50% / 50%</div>
     <div class="modal-btns">
@@ -466,34 +498,26 @@
   let rates = { ILS: 1, EUR: 4.0, USD: 3.7 };
   let expenses = [];
 
+  const names = {
+    A1: 'אורי',
+    A2: 'אדוה',
+    B1: 'אלחנן',
+    B2: 'רוית'
+  };
+
   // טעינה ראשונית
   window.onload = function() {
+    const dateInput = document.getElementById('expDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today >= "2026-06-01" ? today : "2026-06-01";
+
     loadData();
     renderPayers();
     renderExpenses();
     calculate();
-
-    // שמירת שמות בזמן הקלדה
-    ['tripTitle', 'pA1', 'pA2', 'pB1', 'pB2'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        saveData();
-        renderPayers();
-        calculate();
-      });
-    });
   };
 
-  function getNames() {
-    return {
-      A1: document.getElementById('pA1').value || 'אנג\'ל 1',
-      A2: document.getElementById('pA2').value || 'אנג\'ל 2',
-      B1: document.getElementById('pB1').value || 'בנג\'מין 1',
-      B2: document.getElementById('pB2').value || 'בנג\'מין 2'
-    };
-  }
-
   function renderPayers() {
-    const names = getNames();
     const container = document.getElementById('payersContainer');
     container.innerHTML = '';
 
@@ -542,21 +566,24 @@
     rates.EUR = parseFloat(document.getElementById('rateEUR').value) || 4.0;
     rates.USD = parseFloat(document.getElementById('rateUSD').value) || 3.7;
     saveData();
+    renderExpenses();
     calculate();
   }
 
   function addExpense() {
+    const dateVal = document.getElementById('expDate').value;
     const desc = document.getElementById('desc').value.trim();
     const amount = parseFloat(document.getElementById('amount').value);
     const currency = document.getElementById('currency').value;
 
-    if(!desc || isNaN(amount) || amount <= 0) {
-      alert('נא למלא תיאור וסכום תקין');
+    if(!dateVal || !desc || isNaN(amount) || amount <= 0) {
+      alert('נא למלא תאריך, תיאור וסכום תקין');
       return;
     }
 
     const exp = {
       id: Date.now(),
+      date: dateVal,
       desc: desc,
       amount: amount,
       currency: currency,
@@ -567,7 +594,6 @@
     expenses.push(exp);
     saveData();
 
-    // איפוס שדות
     document.getElementById('desc').value = '';
     document.getElementById('amount').value = '';
 
@@ -583,79 +609,102 @@
   }
 
   function renderExpenses() {
-    const list = document.getElementById('expensesList');
-    list.innerHTML = '';
+    const tbody = document.getElementById('expensesList');
+    tbody.innerHTML = '';
 
     if(expenses.length === 0) {
-      list.innerHTML = '<div class="empty-msg">טרם נרשמו הוצאות</div>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
       return;
     }
 
-    const names = getNames();
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
 
     expenses.slice().reverse().forEach(exp => {
-      const item = document.createElement('div');
-      item.className = 'expense-item';
+      const tr = document.createElement('tr');
 
-      const isA = exp.payer.startsWith('A');
-      const sideClass = isA ? 'a' : 'b';
+      const rate = rates[exp.currency] || 1;
+      const amountILS = (exp.amount * rate).toFixed(2);
       const payerName = names[exp.payer] || exp.payer;
 
-      item.innerHTML = `
-        <div class="exp-info">
-          <div class="exp-bar ${sideClass}"></div>
-          <div>
-            <div class="exp-title">${escapeHtml(exp.desc)}</div>
-            <div class="exp-sub">שולם ע"י ${escapeHtml(payerName)} • חלוקה: ${exp.splitA}%/${100-exp.splitA}%</div>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center;">
-          <div class="exp-amount">${exp.amount.toFixed(2)} ${symbols[exp.currency]}</div>
-          <button class="delete-btn" onclick="deleteExpense(${exp.id})" title="מחק">✕</button>
-        </div>
+      const formattedDate = exp.date ? exp.date.split('-').reverse().join('/') : '-';
+
+      tr.innerHTML = `
+        <td>${formattedDate}</td>
+        <td><strong>${escapeHtml(exp.desc)}</strong></td>
+        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)} ${symbols[exp.currency]}</td>
+        <td style="direction:ltr; text-align:right;"><strong>${amountILS} ₪</strong></td>
+        <td>${escapeHtml(payerName)}</td>
+        <td>${exp.splitA}% / ${100-exp.splitA}%</td>
+        <td><button class="delete-btn" onclick="deleteExpense(${exp.id})" title="מחק">✕</button></td>
       `;
-      list.appendChild(item);
+      tbody.appendChild(tr);
     });
   }
 
   function calculate() {
+    const tbody = document.getElementById('summaryTableBody');
+    const summaryFinalEl = document.getElementById('summaryFinalText');
+
     if(expenses.length === 0) {
-      document.getElementById('summaryText').innerText = 'אין עדיין הוצאות';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">אין עדיין נתונים לחישוב</td></tr>';
+      summaryFinalEl.innerText = 'אין עדיין הוצאות';
       return;
     }
 
-    let netA = 0; // חיובי = זוג ב' חייב לזוג א', שלילי = זוג א' חייב לזוג ב'
+    let totalPaidA = 0; // כמה שילמה בפועל משפחת בן רחמים
+    let totalPaidB = 0; // כמה שילמה בפועל משפחת לזרובסקי
+    let totalShareA = 0; // החלק הראוי של בן רחמים
+    let totalShareB = 0; // החלק הראוי של לזרובסקי
 
     expenses.forEach(exp => {
       const rate = rates[exp.currency] || 1;
-      const amountInILS = exp.amount * rate;
-      const shareA = amountInILS * (exp.splitA / 100);
+      const amountILS = exp.amount * rate;
+      const shareA = amountILS * (exp.splitA / 100);
+      const shareB = amountILS - shareA;
+
+      totalShareA += shareA;
+      totalShareB += shareB;
 
       if(exp.payer.startsWith('A')) {
-        netA += (amountInILS - shareA);
+        totalPaidA += amountILS;
       } else {
-        netA -= shareA;
+        totalPaidB += amountILS;
       }
     });
 
-    const summaryEl = document.getElementById('summaryText');
+    const netA = totalPaidA - totalShareA; // חיובי = שילמה יותר מדאי, שלילי = חייבת
+    const netB = totalPaidB - totalShareB;
+
+    tbody.innerHTML = `
+      <tr>
+        <td><strong>משפחת בן רחמים</strong></td>
+        <td style="direction:ltr; text-align:right;">${totalPaidA.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${totalShareA.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right; color: ${netA >= 0 ? 'green' : 'red'};">
+          <strong>${netA >= 0 ? '+' : ''}${netA.toFixed(2)} ₪</strong>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>משפחת לזרובסקי</strong></td>
+        <td style="direction:ltr; text-align:right;">${totalPaidB.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${totalShareB.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right; color: ${netB >= 0 ? 'green' : 'red'};">
+          <strong>${netB >= 0 ? '+' : ''}${netB.toFixed(2)} ₪</strong>
+        </td>
+      </tr>
+    `;
+
     if(Math.abs(netA) < 0.1) {
-      summaryEl.innerText = 'החשבון מאוזן! 🎉';
+      summaryFinalEl.innerText = 'החשבון מאוזן לחלוטין! 🎉';
     } else if(netA > 0) {
-      summaryEl.innerHTML = `זוג ב' משלם לזוג א'<br><span style="color:var(--teal); font-size:22px;">${netA.toFixed(2)} ₪</span>`;
+      summaryFinalEl.innerHTML = `משפחת לזרובסקי משלמת למשפחת בן רחמים<br><span style="color:var(--teal); font-size:24px;">${netA.toFixed(2)} ₪</span>`;
     } else {
-      summaryEl.innerHTML = `זוג א' משלם לזוג ב'<br><span style="color:var(--rust); font-size:22px;">${Math.abs(netA).toFixed(2)} ₪</span>`;
+      summaryFinalEl.innerHTML = `משפחת בן רחמים משלמת למשפחת לזרובסקי<br><span style="color:var(--rust); font-size:24px;">${Math.abs(netA).toFixed(2)} ₪</span>`;
     }
   }
 
   function saveData() {
     const data = {
-      title: document.getElementById('tripTitle').value,
-      pA1: document.getElementById('pA1').value,
-      pA2: document.getElementById('pA2').value,
-      pB1: document.getElementById('pB1').value,
-      pB2: document.getElementById('pB2').value,
       rates: rates,
       expenses: expenses
     };
@@ -667,11 +716,6 @@
       const saved = localStorage.getItem('trip_ledger_data');
       if(saved) {
         const data = JSON.parse(saved);
-        document.getElementById('tripTitle').value = data.title || 'רומא ודרומה';
-        document.getElementById('pA1').value = data.pA1 || 'אורי';
-        document.getElementById('pA2').value = data.pA2 || 'אדוה';
-        document.getElementById('pB1').value = data.pB1 || 'אלחנן';
-        document.getElementById('pB2').value = data.pB2 || 'רוית';
         if(data.rates) {
           rates = data.rates;
           document.getElementById('rateEUR').value = rates.EUR;
