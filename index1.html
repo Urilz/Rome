@@ -20,15 +20,27 @@
       color: var(--text);
       margin: 0;
       padding: 15px;
-      padding-bottom: 140px; /* רווח לתחתית הקבועה */
+      padding-bottom: 150px;
     }
 
     .container {
       max-width: 600px;
       margin: 0 auto;
+      position: relative;
     }
 
-    h1, h2, h3 {
+    .version-tag {
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    h2, h3 {
       text-align: center;
       color: var(--text);
     }
@@ -74,7 +86,20 @@
       cursor: pointer;
     }
 
-    /* Accordion styles */
+    button.btn-cancel {
+      width: 100%;
+      background-color: #95a5a6;
+      color: white;
+      border: none;
+      padding: 8px;
+      font-size: 0.9em;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 5px;
+      display: none;
+    }
+
     details {
       background: white;
       border: 1px solid var(--border);
@@ -100,7 +125,7 @@
     }
 
     th, td {
-      padding: 8px 6px;
+      padding: 8px 4px;
       text-align: right;
       border-bottom: 1px solid var(--border);
     }
@@ -115,15 +140,17 @@
       border-top: 2px solid var(--border);
     }
 
-    .btn-delete {
-      color: #e74c3c;
+    .action-btn {
       background: none;
       border: none;
       cursor: pointer;
-      font-weight: bold;
+      font-size: 1.1em;
+      padding: 0 3px;
     }
 
-    /* Footer sticky summary */
+    .btn-edit { color: #2980b9; }
+    .btn-delete { color: #e74c3c; }
+
     .footer-summary {
       position: fixed;
       bottom: 0;
@@ -164,11 +191,15 @@
 <body>
 
 <div class="container">
+  <span class="version-tag">v1.0.3</span>
   <h2>ניהול הוצאות משותפות</h2>
 
-  <!-- טופס הזנה -->
+  <!-- טופס -->
   <div class="card">
+    <h3 id="formTitle" style="margin-top:0; font-size:1.1em;">הוספת הוצאה חדשה</h3>
     <form id="expenseForm">
+      <input type="hidden" id="editExpenseId" value="">
+
       <div class="form-group">
         <label>תאריך *</label>
         <input type="date" id="expDate" required>
@@ -204,11 +235,12 @@
         </select>
       </div>
 
-      <button type="submit" class="btn-submit">הוסף הוצאה</button>
+      <button type="submit" id="btnSubmit" class="btn-submit">הוסף הוצאה</button>
+      <button type="button" id="btnCancelEdit" class="btn-cancel" onclick="resetForm()">ביטול עריכה</button>
     </form>
   </div>
 
-  <!-- רשימת הוצאות לפי משפחה -->
+  <!-- פירוט לפי משפחה -->
   <h3>פירוט הוצאות</h3>
   
   <details id="acc-ben-rachamim">
@@ -223,8 +255,8 @@
           <th>תיאור</th>
           <th>משלם</th>
           <th>סכום במקור</th>
-          <th>סכום בש"ח</th>
-          <th></th>
+          <th>בש"ח</th>
+          <th>פעולות</th>
         </tr>
       </thead>
       <tbody id="list-ben-rachamim"></tbody>
@@ -249,8 +281,8 @@
           <th>תיאור</th>
           <th>משלם</th>
           <th>סכום במקור</th>
-          <th>סכום בש"ח</th>
-          <th></th>
+          <th>בש"ח</th>
+          <th>פעולות</th>
         </tr>
       </thead>
       <tbody id="list-lazarovsky"></tbody>
@@ -265,7 +297,7 @@
 
 </div>
 
-<!-- תחתית קבועה - סיכומים -->
+<!-- תחתית דף קבועה -->
 <div class="footer-summary">
   <div class="footer-content">
     <div class="footer-line">
@@ -288,79 +320,121 @@
 </div>
 
 <script>
-  // *** יש להדביק כאן את קישור ה-Apps Script שלך *** 
+  // *** יש להדביק את הקישור שלך כאן ***
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
+  const ADMIN_PIN = "1234";
+
   let expenses = [];
 
-  // פונקציית עזר לעיצוב סכומים עם פסיקים ללא ספרות עשרוניות
-  function formatMoney(amount) {
-    return Math.round(amount).toLocaleString('he-IL');
+  function formatMoney(num) {
+    return Math.round(Number(num) || 0).toLocaleString('he-IL');
   }
 
-  // הגדרת תאריך ברירת מחדל להיום
   document.getElementById('expDate').valueAsDate = new Date();
 
-  // הגבלת הקלדה בעברית בלבד בשדה התיאור
-  document.getElementById('expDesc').addEventListener('input', function(e) {
+  document.getElementById('expDesc').addEventListener('input', function() {
     this.value = this.value.replace(/[^\u0590-\u05FF\s]/g, '');
   });
 
-  // טעינת נתונים בטעינת הדף
   window.addEventListener('DOMContentLoaded', fetchExpenses);
 
   async function fetchExpenses() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT_URL")) {
-      return;
-    }
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT_URL")) return;
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL);
       expenses = await res.json();
       renderApp();
     } catch (err) {
-      console.error("Error fetching data:", err);
+      console.error("Fetch error:", err);
     }
   }
 
-  // שיוך משתמש למשפחה
   function getFamily(payer) {
     if (payer === 'אלחנן' || payer === 'רוית') return 'ben-rachamim';
     if (payer === 'אורי' || payer === 'אדוה') return 'lazarovsky';
     return '';
   }
 
-  // הוספת הוצאה
+  function checkAdmin() {
+    const pin = prompt("הזן קוד מנהל לבדיקת הרשאה:");
+    if (pin === ADMIN_PIN) return true;
+    alert("קוד שגוי!");
+    return false;
+  }
+
   document.getElementById('expenseForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    const newExp = {
-      id: Date.now().toString(),
+    const editId = document.getElementById('editExpenseId').value;
+    const isEditMode = Boolean(editId);
+
+    const expenseData = {
+      id: isEditMode ? editId : Date.now().toString(),
       date: document.getElementById('expDate').value,
       desc: document.getElementById('expDesc').value.trim(),
       amount: parseFloat(document.getElementById('expAmount').value),
       currency: document.getElementById('expCurrency').value,
       payer: document.getElementById('expPayer').value,
-      splitA: 50 // ברירת מחדל חלוקה שווה
+      splitA: 50
     };
 
-    // הוספה מקומית לרענון מהיר
-    expenses.push(newExp);
-    renderApp();
-    this.reset();
-    document.getElementById('expDate').valueAsDate = new Date();
+    if (isEditMode) {
+      const index = expenses.findIndex(x => x.id == editId);
+      if (index !== -1) expenses[index] = expenseData;
+    } else {
+      expenses.push(expenseData);
+    }
 
-    // שליחה לענן
+    renderApp();
+    resetForm();
+
     try {
+      if (isEditMode) {
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'delete', id: editId })
+        });
+      }
       await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'add', ...newExp })
+        body: JSON.stringify({ action: 'add', ...expenseData })
       });
     } catch (err) {
-      alert("שגיאה בשמירת הנתונים בענן");
+      alert("שגיאה בסנכרון מול הענן");
     }
   });
 
-  // מחיקת הוצאה
+  function startEdit(id) {
+    if (!checkAdmin()) return;
+
+    const item = expenses.find(x => x.id == id);
+    if (!item) return;
+
+    document.getElementById('editExpenseId').value = item.id;
+    document.getElementById('expDate').value = item.date;
+    document.getElementById('expDesc').value = item.desc;
+    document.getElementById('expAmount').value = item.amount;
+    document.getElementById('expCurrency').value = item.currency;
+    document.getElementById('expPayer').value = item.payer;
+
+    document.getElementById('formTitle').innerText = "עריכת הוצאה";
+    document.getElementById('btnSubmit').innerText = "עדכן הוצאה";
+    document.getElementById('btnCancelEdit').style.display = "block";
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('expenseForm').reset();
+    document.getElementById('editExpenseId').value = "";
+    document.getElementById('expDate').valueAsDate = new Date();
+    document.getElementById('formTitle').innerText = "הוספת הוצאה חדשה";
+    document.getElementById('btnSubmit').innerText = "הוסף הוצאה";
+    document.getElementById('btnCancelEdit').style.display = "none";
+  }
+
   async function deleteExpense(id) {
+    if (!checkAdmin()) return;
     if (!confirm("האם למחוק הוצאה זו?")) return;
 
     expenses = expenses.filter(x => x.id != id);
@@ -376,7 +450,6 @@
     }
   }
 
-  // רינדור וחישובים
   function renderApp() {
     const listBR = document.getElementById('list-ben-rachamim');
     const listLZ = document.getElementById('list-lazarovsky');
@@ -390,10 +463,9 @@
     expenses.forEach(item => {
       const family = getFamily(item.payer);
       
-      // חישוב סכום מוערך בש"ח לצורך תצוגה (אם המטבע שונה)
       let amountILS = item.amount;
       let symbol = '₪';
-      if (item.currency === 'EUR') { symbol = '€'; amountILS = item.amount * 4.0; } // הערכה סבירה/אחידה
+      if (item.currency === 'EUR') { symbol = '€'; amountILS = item.amount * 4.0; }
       if (item.currency === 'USD') { symbol = '$'; amountILS = item.amount * 3.7; }
 
       if (family === 'ben-rachamim') sumBR += amountILS;
@@ -406,7 +478,10 @@
           <td>${item.payer}</td>
           <td>${formatMoney(item.amount)} ${symbol}</td>
           <td>${formatMoney(amountILS)} ₪</td>
-          <td><button class="btn-delete" onclick="deleteExpense('${item.id}')">✕</button></td>
+          <td>
+            <button class="action-btn btn-edit" title="ערוך" onclick="startEdit('${item.id}')">✎</button>
+            <button class="action-btn btn-delete" title="מחק" onclick="deleteExpense('${item.id}')">✕</button>
+          </td>
         </tr>
       `;
 
@@ -414,7 +489,6 @@
       if (family === 'lazarovsky') listLZ.innerHTML += rowHtml;
     });
 
-    // עדכון סכומים בלשוניות
     const strBR = formatMoney(sumBR) + " ₪";
     const strLZ = formatMoney(sumLZ) + " ₪";
 
@@ -424,15 +498,13 @@
     document.getElementById('sum-lazarovsky').innerText = strLZ;
     document.getElementById('foot-lazarovsky').innerText = strLZ;
 
-    // עדכון תחתית העמוד (Footer)
     const totalAll = sumBR + sumLZ;
     document.getElementById('total-all-ils').innerText = formatMoney(totalAll) + " ₪";
     document.getElementById('total-ben-rachamim-footer').innerText = strBR;
     document.getElementById('total-lazarovsky-footer').innerText = strLZ;
 
-    // חישוב התחשבנות סופית (חצי חצי)
     const half = totalAll / 2;
-    const diff = sumBR - half; // חיובי = בן רחמים שילמו יותר, שלילי = לזרובסקי שילמו יותר
+    const diff = sumBR - half;
     
     const finalElem = document.getElementById('final-settlement');
     if (Math.abs(diff) < 1) {
