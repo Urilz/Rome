@@ -440,10 +440,10 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 1.2.0</div>
+    <div class="version-tag">גרסה 1.2.1</div>
   </div>
 
-  <!-- כותרת וזוגות מעודכנים -->
+  <!-- כותרת וזוגות -->
   <div class="header-card">
     <h1 class="main-title">רומא ודרומה</h1>
     <div class="subtitle">ניהול הוצאות משותפות</div>
@@ -641,8 +641,8 @@
     loadLocalData();
     fetchDataFromSheet();
 
-    // סנכרון אוטומטי ברקע כל 15 שניות
-    setInterval(fetchDataFromSheet, 15000);
+    // סנכרון אוטומטי ברקע כל 10 שניות
+    setInterval(fetchDataFromSheet, 10000);
   };
 
   function updateSyncStatus(msg) {
@@ -1007,9 +1007,7 @@
 
   function saveData() {
     const payload = { rates, expenses };
-    try {
-      localStorage.setItem('trip_ledger_data', JSON.stringify(payload));
-    } catch(e) {}
+    saveDataToLocalOnly(rates, expenses);
 
     if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_URL") {
       updateSyncStatus('שומר ב-Google Sheets...');
@@ -1050,8 +1048,17 @@
     }
 
     updateSyncStatus('מרענן נתונים...');
-    fetch(GOOGLE_SCRIPT_URL)
-      .then(res => res.json())
+    
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'GET',
+      redirect: 'follow'
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return res.json();
+      })
       .then(data => {
         if (data) {
           if (data.rates) {
@@ -1068,7 +1075,10 @@
           updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'}) + ')');
         }
       })
-      .catch(e => updateSyncStatus('עובד במצב מקומי (שגיאת תקשורת)'));
+      .catch(e => {
+        console.error('Sync error:', e);
+        updateSyncStatus('עובד במצב מקומי (שגיאת תקשורת)');
+      });
   }
 
   function saveDataToLocalOnly(r, e) {
