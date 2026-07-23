@@ -418,6 +418,7 @@
       font-size: 11px;
       text-decoration: underline;
       cursor: pointer;
+      margin-left: 8px;
     }
 
     .sync-status {
@@ -438,8 +439,8 @@
 <div class="container">
 
   <div class="top-bar">
-    <div id="syncStatus" class="sync-status">מצב סנכרון: לא מחובר</div>
-    <div class="version-tag">גרסה 1.1.0</div>
+    <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
+    <div class="version-tag">גרסה 1.2.0</div>
   </div>
 
   <!-- כותרת וזוגות מעודכנים -->
@@ -517,7 +518,10 @@
   <div class="card">
     <div class="card-title">
       <span>הוצאות ששולמו</span>
-      <button class="reset-btn" onclick="clearAllData()">איפוס נתונים</button>
+      <div>
+        <button class="reset-btn" onclick="fetchDataFromSheet()">🔄 רענן נתונים</button>
+        <button class="reset-btn" onclick="clearAllData()">איפוס נתונים</button>
+      </div>
     </div>
     <div class="table-container">
       <table id="expensesTable">
@@ -573,7 +577,7 @@
       </table>
     </div>
 
-    <!-- באונדר תחתון חדש ומוקטן -->
+    <!-- באונדר תחתון מוקטן -->
     <div class="summary-result-box" id="summaryResultBox">
       <div class="summary-line">
         <span>סה"כ הוצאות ב-₪:</span>
@@ -609,6 +613,7 @@
 </div>
 
 <script>
+  // נא לוודא שהחלפת בכתובת ה-Web App של Google Apps Script
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
   const ADMIN_PASS = "7350";
 
@@ -620,7 +625,6 @@
   let expenses = [];
   let expandedFamily = { A: false, B: false };
 
-  // מפת שיוך אנשים מעודכנת
   const names = {
     A1: 'אלחנן',
     A2: 'רוית',
@@ -634,19 +638,21 @@
     dateInput.value = today >= "2026-06-01" ? today : "2026-06-01";
 
     renderPayers();
-    loadData();
+    loadLocalData();
+    fetchDataFromSheet();
+
+    // סנכרון אוטומטי ברקע כל 15 שניות
+    setInterval(fetchDataFromSheet, 15000);
   };
 
   function updateSyncStatus(msg) {
     document.getElementById('syncStatus').innerText = 'מצב סנכרון: ' + msg;
   }
 
-  // פורמט מספרים: פסיק בלי ספרות עשרוניות
   function formatMoney(num) {
     return Math.round(num).toLocaleString('he-IL');
   }
 
-  // בדיקת עברית בלבד בשילוב תווים מותרים לבנים
   function validateHebrew(input) {
     const regex = /^[\u0590-\u05FF\s0-9\-\.,'"]*$/;
     const errEl = document.getElementById('hebrewError');
@@ -894,7 +900,7 @@
 
     let html = '';
 
-    // שורה של בן רחמים
+    // משפחת בן רחמים
     html += `
       <tr>
         <td>
@@ -913,7 +919,7 @@
       html += renderFamilyDetailsRow(expensesA, totalPaidA);
     }
 
-    // שורה של לזרובסקי
+    // משפחת לזרובסקי
     html += `
       <tr>
         <td>
@@ -934,7 +940,6 @@
 
     tbody.innerHTML = html;
 
-    // עדכון הסיכום התחתון המוקטן
     document.getElementById('summaryTotalAll').innerText = `${formatMoney(totalAll)} ₪`;
     document.getElementById('summaryTotalA').innerText = `${formatMoney(totalPaidA)} ₪`;
     document.getElementById('summaryTotalB').innerText = `${formatMoney(totalPaidB)} ₪`;
@@ -1014,12 +1019,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      .then(() => updateSyncStatus('מעודכן מול Google Sheets'))
+      .then(() => {
+        updateSyncStatus('מעודכן מול Google Sheets (' + new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'}) + ')');
+      })
       .catch(e => updateSyncStatus('שגיאה בשמירה מרחוק'));
     }
   }
 
-  function loadData() {
+  function loadLocalData() {
     try {
       const saved = localStorage.getItem('trip_ledger_data');
       if(saved) {
@@ -1034,26 +1041,40 @@
         calculate();
       }
     } catch(e) {}
+  }
 
-    if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_URL") {
-      updateSyncStatus('טוען מ-Google Sheets...');
-      fetch(GOOGLE_SCRIPT_URL)
-        .then(res => res.json())
-        .then(data => {
-          if (data) {
-            if (data.rates) {
-              rates = data.rates;
-              document.getElementById('rateEUR').value = rates.EUR;
-              document.getElementById('rateUSD').value = rates.USD;
-            }
-            if (data.expenses) expenses = data.expenses;
-            renderExpenses();
-            calculate();
-            updateSyncStatus('מתוזמן ומעודכן');
-          }
-        })
-        .catch(e => updateSyncStatus('עובד במצב מקומי (מחשב בלבד)'));
+  function fetchDataFromSheet() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") {
+      updateSyncStatus('מצב מקומי (לא מחובר ל-Google Sheets)');
+      return;
     }
+
+    updateSyncStatus('מרענן נתונים...');
+    fetch(GOOGLE_SCRIPT_URL)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          if (data.rates) {
+            rates = data.rates;
+            document.getElementById('rateEUR').value = rates.EUR;
+            document.getElementById('rateUSD').value = rates.USD;
+          }
+          if (data.expenses) {
+            expenses = data.expenses;
+          }
+          saveDataToLocalOnly(rates, expenses);
+          renderExpenses();
+          calculate();
+          updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'}) + ')');
+        }
+      })
+      .catch(e => updateSyncStatus('עובד במצב מקומי (שגיאת תקשורת)'));
+  }
+
+  function saveDataToLocalOnly(r, e) {
+    try {
+      localStorage.setItem('trip_ledger_data', JSON.stringify({ rates: r, expenses: e }));
+    } catch(err) {}
   }
 
   function escapeHtml(str) {
