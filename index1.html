@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות</title>
+  <title>ניהול הוצאות - רומא ודרומה</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -37,7 +37,7 @@
 
     .container {
       width: 100%;
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto;
       padding: 16px 16px 40px 16px;
     }
@@ -116,6 +116,9 @@
       margin-top: 0;
       margin-bottom: 14px;
       color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     /* טופס */
@@ -229,20 +232,20 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 13px;
       text-align: right;
     }
 
     th {
       background-color: var(--header-bg);
       color: var(--text);
-      padding: 8px;
+      padding: 10px 8px;
       border-bottom: 2px solid var(--border);
       white-space: nowrap;
     }
 
     td {
-      padding: 8px;
+      padding: 10px 8px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
       white-space: nowrap;
@@ -255,6 +258,44 @@
       font-size: 16px;
       cursor: pointer;
       padding: 2px 6px;
+    }
+
+    /* כפתורי פלוס/מינוס להרחבת פירוט */
+    .toggle-details-btn {
+      background: #FFFDF9;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 6px;
+    }
+
+    .details-row {
+      background-color: rgba(255, 253, 249, 0.7);
+    }
+
+    .details-box {
+      padding: 10px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      margin: 4px 0;
+      background: #fff;
+    }
+
+    .details-table {
+      width: 100%;
+      font-size: 12px;
+    }
+
+    .details-table th {
+      background: #f7ebd9;
     }
 
     /* חלון קופץ לשינוי חלוקה */
@@ -337,6 +378,15 @@
       font-size: 13px;
       padding: 10px 0;
     }
+
+    .reset-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -414,14 +464,18 @@
 
   <!-- רשימת הוצאות בטבלה -->
   <div class="card">
-    <div class="card-title">הוצאות ששולמו</div>
+    <div class="card-title">
+      <span>הוצאות ששולמו</span>
+      <button class="reset-btn" onclick="clearAllData()">איפוס נתונים</button>
+    </div>
     <div class="table-container">
       <table id="expensesTable">
         <thead>
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>
-            <th>סכום במקור</th>
+            <th>סכום במטבע מקור</th>
+            <th>מטבע</th>
             <th>סכום ב-₪</th>
             <th>משלם</th>
             <th>חלוקה</th>
@@ -490,13 +544,13 @@
 </div>
 
 <script>
-  // מודל נתונים
   let activePayer = 'A1';
   let splitA = 50;
   let tempSplitA = 50;
   
   let rates = { ILS: 1, EUR: 4.0, USD: 3.7 };
   let expenses = [];
+  let expandedFamily = { A: false, B: false };
 
   const names = {
     A1: 'אורי',
@@ -505,7 +559,6 @@
     B2: 'רוית'
   };
 
-  // טעינה ראשונית
   window.onload = function() {
     const dateInput = document.getElementById('expDate');
     const today = new Date().toISOString().split('T')[0];
@@ -608,12 +661,21 @@
     calculate();
   }
 
+  function clearAllData() {
+    if(confirm('האם למחוק את כל ההוצאות שנרשמו?')) {
+      expenses = [];
+      saveData();
+      renderExpenses();
+      calculate();
+    }
+  }
+
   function renderExpenses() {
     const tbody = document.getElementById('expensesList');
     tbody.innerHTML = '';
 
     if(expenses.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
       return;
     }
 
@@ -631,7 +693,8 @@
       tr.innerHTML = `
         <td>${formattedDate}</td>
         <td><strong>${escapeHtml(exp.desc)}</strong></td>
-        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)} ${symbols[exp.currency]}</td>
+        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)}</td>
+        <td style="text-align:center;"><strong>${symbols[exp.currency]}</strong></td>
         <td style="direction:ltr; text-align:right;"><strong>${amountILS} ₪</strong></td>
         <td>${escapeHtml(payerName)}</td>
         <td>${exp.splitA}% / ${100-exp.splitA}%</td>
@@ -639,6 +702,11 @@
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  function toggleFamilyDetails(famKey) {
+    expandedFamily[famKey] = !expandedFamily[famKey];
+    calculate();
   }
 
   function calculate() {
@@ -651,10 +719,11 @@
       return;
     }
 
-    let totalPaidA = 0; // כמה שילמה בפועל משפחת בן רחמים
-    let totalPaidB = 0; // כמה שילמה בפועל משפחת לזרובסקי
-    let totalShareA = 0; // החלק הראוי של בן רחמים
-    let totalShareB = 0; // החלק הראוי של לזרובסקי
+    let totalPaidA = 0, totalPaidB = 0;
+    let totalShareA = 0, totalShareB = 0;
+
+    let expensesA = [];
+    let expensesB = [];
 
     expenses.forEach(exp => {
       const rate = rates[exp.currency] || 1;
@@ -667,25 +736,45 @@
 
       if(exp.payer.startsWith('A')) {
         totalPaidA += amountILS;
+        expensesA.push({ ...exp, amountILS });
       } else {
         totalPaidB += amountILS;
+        expensesB.push({ ...exp, amountILS });
       }
     });
 
-    const netA = totalPaidA - totalShareA; // חיובי = שילמה יותר מדאי, שלילי = חייבת
+    const netA = totalPaidA - totalShareA;
     const netB = totalPaidB - totalShareB;
 
-    tbody.innerHTML = `
+    let html = '';
+
+    // שורה של בן רחמים
+    html += `
       <tr>
-        <td><strong>משפחת בן רחמים</strong></td>
+        <td>
+          <button class="toggle-details-btn" onclick="toggleFamilyDetails('A')">${expandedFamily.A ? '-' : '+'}</button>
+          <strong>משפחת בן רחמים</strong>
+        </td>
         <td style="direction:ltr; text-align:right;">${totalPaidA.toFixed(2)} ₪</td>
         <td style="direction:ltr; text-align:right;">${totalShareA.toFixed(2)} ₪</td>
         <td style="direction:ltr; text-align:right; color: ${netA >= 0 ? 'green' : 'red'};">
           <strong>${netA >= 0 ? '+' : ''}${netA.toFixed(2)} ₪</strong>
         </td>
       </tr>
+    `;
+
+    // פירוט עבור בן רחמים
+    if(expandedFamily.A) {
+      html += renderFamilyDetailsRow(expensesA);
+    }
+
+    // שורה של לזרובסקי
+    html += `
       <tr>
-        <td><strong>משפחת לזרובסקי</strong></td>
+        <td>
+          <button class="toggle-details-btn" onclick="toggleFamilyDetails('B')">${expandedFamily.B ? '-' : '+'}</button>
+          <strong>משפחת לזרובסקי</strong>
+        </td>
         <td style="direction:ltr; text-align:right;">${totalPaidB.toFixed(2)} ₪</td>
         <td style="direction:ltr; text-align:right;">${totalShareB.toFixed(2)} ₪</td>
         <td style="direction:ltr; text-align:right; color: ${netB >= 0 ? 'green' : 'red'};">
@@ -694,6 +783,13 @@
       </tr>
     `;
 
+    // פירוט עבור לזרובסקי
+    if(expandedFamily.B) {
+      html += renderFamilyDetailsRow(expensesB);
+    }
+
+    tbody.innerHTML = html;
+
     if(Math.abs(netA) < 0.1) {
       summaryFinalEl.innerText = 'החשבון מאוזן לחלוטין! 🎉';
     } else if(netA > 0) {
@@ -701,6 +797,54 @@
     } else {
       summaryFinalEl.innerHTML = `משפחת בן רחמים משלמת למשפחת לזרובסקי<br><span style="color:var(--rust); font-size:24px;">${Math.abs(netA).toFixed(2)} ₪</span>`;
     }
+  }
+
+  function renderFamilyDetailsRow(familyExpenses) {
+    const symbols = { ILS: '₪', EUR: '€', USD: '$' };
+
+    if(familyExpenses.length === 0) {
+      return `
+        <tr class="details-row">
+          <td colspan="4">
+            <div class="details-box empty-msg">משפחה זו לא שילמה הוצאות עדיין.</div>
+          </td>
+        </tr>
+      `;
+    }
+
+    let rowsHtml = familyExpenses.map(exp => `
+      <tr>
+        <td>${exp.date ? exp.date.split('-').reverse().join('/') : '-'}</td>
+        <td>${escapeHtml(exp.desc)}</td>
+        <td>${names[exp.payer] || exp.payer}</td>
+        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)} ${symbols[exp.currency]}</td>
+        <td style="direction:ltr; text-align:right;"><strong>${exp.amountILS.toFixed(2)} ₪</strong></td>
+      </tr>
+    `).join('');
+
+    return `
+      <tr class="details-row">
+        <td colspan="4">
+          <div class="details-box">
+            <div style="font-weight:bold; margin-bottom:6px; font-size:12px;">פירוט הוצאות ששולמו:</div>
+            <table class="details-table">
+              <thead>
+                <tr>
+                  <th>תאריך</th>
+                  <th>תיאור</th>
+                  <th>משלם</th>
+                  <th>סכום במקור</th>
+                  <th>סכום ב-₪</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 
   function saveData() {
