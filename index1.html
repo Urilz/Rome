@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות - רומא ודרומה</title>
-
+  <title>1ניהול הוצאות משותף - רומא ודרומה</title>
+    
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
     
@@ -20,403 +20,151 @@
       --font: 'Rubik', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-      font-family: var(--font);
-    }
+    * { box-sizing: border-box; font-family: var(--font); }
 
     html, body {
       background-color: var(--bg);
       color: var(--text);
-      margin: 0;
-      padding: 0;
-      direction: rtl;
-      width: 100%;
-      min-height: 100vh;
+      margin: 0; padding: 0;
+      direction: rtl; width: 100%; min-height: 100vh;
     }
 
     .container {
-      width: 100%;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px 16px 40px 16px;
+      width: 100%; max-width: 720px;
+      margin: 0 auto; padding: 16px 16px 40px 16px;
     }
 
-    /* כותרת וזוגות */
     .header-card {
       background: var(--header-bg);
-      border-radius: 16px;
-      padding: 20px;
+      border-radius: 16px; padding: 20px;
       margin-bottom: 16px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.03);
     }
 
-    .main-title {
-      font-size: 26px;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0 0 4px 0;
-    }
+    .main-title { font-size: 26px; font-weight: 700; margin: 0 0 4px 0; }
+    .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600; }
 
-    .subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-      font-weight: 600;
-    }
-
-    .couples-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .couple-box {
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .couple-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
+    .couples-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .couple-box { background: rgba(255, 255, 255, 0.6); border-radius: 10px; padding: 12px; }
+    .couple-title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
     .dot-a { background: var(--teal); }
     .dot-b { background: var(--rust); }
+    .names-list { font-size: 13px; color: var(--text); line-height: 1.5; }
 
-    .names-list {
-      font-size: 13px;
-      color: var(--text);
-      line-height: 1.5;
-    }
-
-    /* כרטיסים כלליים */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 16px;
+      border-radius: 14px; padding: 16px; margin-bottom: 16px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.02);
     }
 
     .card-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-top: 0;
-      margin-bottom: 14px;
-      color: var(--text);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 14px;
+      display: flex; justify-content: space-between; align-items: center;
     }
 
-    /* טופס */
-    .form-group {
-      margin-bottom: 12px;
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; background: #FFFDF9; color: var(--text); outline: none;
     }
 
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-    }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="date"],
-    select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 15px;
-      background: #FFFDF9;
-      color: var(--text);
-      outline: none;
-    }
-
-    input:focus, select:focus {
-      border-color: var(--teal);
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    /* כפתורי בחירת משלם */
-    .payers-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .payers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     .payer-btn {
-      padding: 10px;
-      border: 1px solid var(--border);
-      background: #FFFDF9;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      cursor: pointer;
-      text-align: center;
+      padding: 10px; border: 1px solid var(--border);
+      background: #FFFDF9; border-radius: 8px; font-size: 13px;
+      font-weight: 600; color: var(--text); cursor: pointer; text-align: center;
     }
+    .payer-btn.active-a { background: var(--teal); color: white; border-color: var(--teal); }
+    .payer-btn.active-b { background: var(--rust); color: white; border-color: var(--rust); }
 
-    .payer-btn.active-a {
-      background: var(--teal);
-      color: white;
-      border-color: var(--teal);
-    }
-
-    .payer-btn.active-b {
-      background: var(--rust);
-      color: white;
-      border-color: var(--rust);
-    }
-
-    /* חלוקה */
     .split-box {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #FFFDF9;
-      border: 1px solid var(--border);
-      padding: 10px 12px;
-      border-radius: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: #FFFDF9; border: 1px solid var(--border);
+      padding: 10px 12px; border-radius: 8px;
     }
 
     .split-btn {
-      background: transparent;
-      border: 1px solid var(--teal);
-      color: var(--teal);
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
+      background: transparent; border: 1px solid var(--teal); color: var(--teal);
+      border-radius: 6px; padding: 6px 10px; font-weight: 700; font-size: 12px; cursor: pointer;
     }
 
     .submit-btn {
-      width: 100%;
-      background: var(--text);
-      color: var(--bg);
-      border: none;
-      padding: 14px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      margin-top: 8px;
+      width: 100%; background: var(--text); color: var(--bg);
+      border: none; padding: 14px; border-radius: 8px;
+      font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px;
     }
 
-    /* טבלאות */
-    .table-container {
-      overflow-x: auto;
-    }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; }
+    th { background-color: var(--header-bg); padding: 10px 8px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      text-align: right;
-    }
-
-    th {
-      background-color: var(--header-bg);
-      color: var(--text);
-      padding: 10px 8px;
-      border-bottom: 2px solid var(--border);
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 10px 8px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-      white-space: nowrap;
-    }
-
-    .delete-btn {
-      background: none;
-      border: none;
-      color: #cc0000;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 2px 6px;
-    }
-
-    /* כפתורי פלוס/מינוס להרחבת פירוט */
+    .delete-btn { background: none; border: none; color: #cc0000; font-size: 16px; cursor: pointer; }
     .toggle-details-btn {
-      background: #FFFDF9;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      width: 24px;
-      height: 24px;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      color: var(--text);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 6px;
+      background: #FFFDF9; border: 1px solid var(--border); border-radius: 4px;
+      width: 24px; height: 24px; font-weight: bold; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; margin-left: 6px;
     }
 
-    .details-row {
-      background-color: rgba(255, 253, 249, 0.7);
-    }
+    .details-row { background-color: rgba(255, 253, 249, 0.7); }
+    .details-box { padding: 10px; border: 1px dashed var(--border); border-radius: 8px; margin: 4px 0; background: #fff; }
+    .details-table { width: 100%; font-size: 12px; }
+    .details-table th { background: #f7ebd9; }
 
-    .details-box {
-      padding: 10px;
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      margin: 4px 0;
-      background: #fff;
-    }
-
-    .details-table {
-      width: 100%;
-      font-size: 12px;
-    }
-
-    .details-table th {
-      background: #f7ebd9;
-    }
-
-    /* חלון קופץ לשינוי חלוקה */
     .modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 1000;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+      padding: 20px; z-index: 1000;
     }
-    .modal[hidden] {
-      display: none;
-    }
-
-    .modal-content {
-      background: var(--bg);
-      border-radius: 14px;
-      padding: 20px;
-      width: 100%;
-      max-width: 320px;
-      text-align: center;
-    }
-
-    .range-slider {
-      width: 100%;
-      margin: 16px 0;
-    }
-
-    .modal-btns {
-      display: flex;
-      gap: 10px;
-    }
-
-    .modal-btns button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
+    .modal[hidden] { display: none; }
+    .modal-content { background: var(--bg); border-radius: 14px; padding: 20px; width: 100%; max-width: 320px; text-align: center; }
+    .range-slider { width: 100%; margin: 16px 0; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer; }
     .btn-confirm { background: var(--text); color: var(--bg); }
     .btn-cancel { background: transparent; border: 1px solid var(--border) !important; color: var(--text); }
 
-    /* סיכום */
-    .summary-card {
-      background: var(--header-bg);
-      border-radius: 14px;
-      padding: 20px;
-    }
-
-    .summary-table th {
-      background-color: rgba(255, 255, 255, 0.5);
-    }
-
+    .summary-card { background: var(--header-bg); border-radius: 14px; padding: 20px; }
+    .summary-table th { background-color: rgba(255, 255, 255, 0.5); }
     .summary-result-box {
-      background: #FFFFFF;
-      border: 2px solid var(--teal);
-      border-radius: 10px;
-      padding: 16px;
-      margin-top: 16px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      background: #FFFFFF; border: 2px solid var(--teal);
+      border-radius: 10px; padding: 16px; margin-top: 16px; text-align: center;
     }
-
-    .summary-final-text {
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.4;
-      margin-top: 4px;
-    }
-
-    .empty-msg {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 13px;
-      padding: 10px 0;
-    }
-
-    .reset-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 11px;
-      text-decoration: underline;
-      cursor: pointer;
-    }
+    .summary-final-text { font-size: 20px; font-weight: 700; line-height: 1.4; margin-top: 4px; }
+    .empty-msg { text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px 0; }
+    
+    .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 12px; background: #e0e0e0; }
+    .status-badge.syncing { background: #fff3cd; color: #856404; }
+    .status-badge.online { background: #d4edda; color: #155724; }
   </style>
 </head>
 <body>
 
 <div class="container">
 
-  <!-- כותרת וזוגות -->
   <div class="header-card">
     <h1 class="main-title">רומא ודרומה</h1>
-    <div class="subtitle">ניהול הוצאות משותפות</div>
+    <div class="subtitle">ניהול הוצאות משותפות ומסונכרן בזמן אמת</div>
 
     <div class="couples-grid">
       <div class="couple-box">
         <div class="couple-title"><span class="dot dot-a"></span>משפחת בן רחמים</div>
-        <div class="names-list">
-          <div>אורי</div>
-          <div>אדוה</div>
-        </div>
+        <div class="names-list"><div>אורי</div><div>אדוה</div></div>
       </div>
       <div class="couple-box">
         <div class="couple-title"><span class="dot dot-b"></span>משפחת לזרובסקי</div>
-        <div class="names-list">
-          <div>אלחנן</div>
-          <div>רוית</div>
-        </div>
+        <div class="names-list"><div>אלחנן</div><div>רוית</div></div>
       </div>
     </div>
   </div>
 
-  <!-- טופס הוספה -->
   <div class="card">
     <div class="card-title">הוספת הוצאה</div>
     
@@ -459,17 +207,16 @@
       </div>
     </div>
 
-    <button type="button" class="submit-btn" onclick="addExpense()">הוסף הוצאה</button>
+    <button type="button" id="submitBtn" class="submit-btn" onclick="addExpense()">הוסף הוצאה</button>
   </div>
 
-  <!-- רשימת הוצאות בטבלה -->
   <div class="card">
     <div class="card-title">
       <span>הוצאות ששולמו</span>
-      <button class="reset-btn" onclick="clearAllData()">איפוס נתונים</button>
+      <span id="syncStatus" class="status-badge">מסתנכרן...</span>
     </div>
     <div class="table-container">
-      <table id="expensesTable">
+      <table>
         <thead>
           <tr>
             <th>תאריך</th>
@@ -487,7 +234,6 @@
     </div>
   </div>
 
-  <!-- שערי המרה -->
   <div class="card">
     <div class="card-title">שערי המרה (לפי ₪)</div>
     <div class="grid-2">
@@ -502,9 +248,8 @@
     </div>
   </div>
 
-  <!-- פירוט וסיכום סופי -->
   <div class="summary-card">
-    <div style="font-size:16px; font-weight:700; color:var(--text); margin-bottom:12px;">סיכום חשבון חודשי ופירוט חישוב</div>
+    <div style="font-size:16px; font-weight:700; margin-bottom:12px;">סיכום חשבון חודשי ופירוט חישוב</div>
     
     <div class="table-container">
       <table class="summary-table">
@@ -530,7 +275,6 @@
 
 </div>
 
-<!-- חלון קופץ לחלוקה -->
 <div class="modal" id="splitModal" hidden>
   <div class="modal-content">
     <div style="font-weight:700; margin-bottom:10px;">אחוז השתתפות בן רחמים</div>
@@ -544,6 +288,9 @@
 </div>
 
 <script>
+  // הזינו כאן את ה-URL שקיבלתם מ-Google Apps Script
+  const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
+
   let activePayer = 'A1';
   let splitA = 50;
   let tempSplitA = 50;
@@ -553,10 +300,8 @@
   let expandedFamily = { A: false, B: false };
 
   const names = {
-    A1: 'אורי',
-    A2: 'אדוה',
-    B1: 'אלחנן',
-    B2: 'רוית'
+    A1: 'אורי', A2: 'אדוה',
+    B1: 'אלחנן', B2: 'רוית'
   };
 
   window.onload = function() {
@@ -564,63 +309,45 @@
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today >= "2026-06-01" ? today : "2026-06-01";
 
-    loadData();
     renderPayers();
-    renderExpenses();
-    calculate();
+    fetchDataFromCloud();
+
+    // רענון אוטומטי של הנתונים מהענן כל 10 שניות
+    setInterval(fetchDataFromCloud, 10000);
   };
 
-  function renderPayers() {
-    const container = document.getElementById('payersContainer');
-    container.innerHTML = '';
-
-    const list = [
-      { id: 'A1', name: names.A1, type: 'a' },
-      { id: 'A2', name: names.A2, type: 'a' },
-      { id: 'B1', name: names.B1, type: 'b' },
-      { id: 'B2', name: names.B2, type: 'b' }
-    ];
-
-    list.forEach(item => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'payer-btn' + (activePayer === item.id ? ' active-' + item.type : '');
-      btn.innerText = item.name;
-      btn.onclick = function() {
-        activePayer = item.id;
-        renderPayers();
-      };
-      container.appendChild(btn);
-    });
+  function setSyncStatus(text, stateClass) {
+    const badge = document.getElementById('syncStatus');
+    badge.innerText = text;
+    badge.className = 'status-badge ' + stateClass;
   }
 
-  function openSplitModal() {
-    tempSplitA = splitA;
-    document.getElementById('splitRange').value = tempSplitA;
-    updateModalLabel(tempSplitA);
-    document.getElementById('splitModal').hidden = false;
-  }
+  function fetchDataFromCloud() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT_URL")) {
+      setSyncStatus('נדרש הגדרת URL', 'syncing');
+      return;
+    }
 
-  function closeSplitModal() {
-    document.getElementById('splitModal').hidden = true;
-  }
-
-  function updateModalLabel(val) {
-    document.getElementById('modalLabel').innerText = val + '% / ' + (100 - val) + '%';
-  }
-
-  function saveSplit() {
-    splitA = parseInt(document.getElementById('splitRange').value, 10);
-    document.getElementById('splitDisplayText').innerText = splitA + '% / ' + (100 - splitA) + '%';
-    closeSplitModal();
-  }
-
-  function updateRates() {
-    rates.EUR = parseFloat(document.getElementById('rateEUR').value) || 4.0;
-    rates.USD = parseFloat(document.getElementById('rateUSD').value) || 3.7;
-    saveData();
-    renderExpenses();
-    calculate();
+    fetch(GOOGLE_SCRIPT_URL)
+      .then(res => res.json())
+      .then(data => {
+        expenses = data.map(item => ({
+          id: Number(item.id),
+          date: String(item.date).split('T')[0],
+          desc: item.desc,
+          amount: Number(item.amount),
+          currency: item.currency,
+          payer: item.payer,
+          splitA: Number(item.splitA)
+        }));
+        renderExpenses();
+        calculate();
+        setSyncStatus('מסונכרן', 'online');
+      })
+      .catch(err => {
+        console.error(err);
+        setSyncStatus('שגיאת סינכרון', 'syncing');
+      });
   }
 
   function addExpense() {
@@ -635,6 +362,7 @@
     }
 
     const exp = {
+      action: 'add',
       id: Date.now(),
       date: dateVal,
       desc: desc,
@@ -644,30 +372,81 @@
       splitA: splitA
     };
 
-    expenses.push(exp);
-    saveData();
+    setSyncStatus('שומר...', 'syncing');
+    document.getElementById('submitBtn').disabled = true;
 
-    document.getElementById('desc').value = '';
-    document.getElementById('amount').value = '';
-
-    renderExpenses();
-    calculate();
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(exp)
+    })
+    .then(res => res.json())
+    .then(() => {
+      document.getElementById('desc').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('submitBtn').disabled = false;
+      fetchDataFromCloud();
+    })
+    .catch(err => {
+      alert('שגיאה בשמירת הנתונים בענן');
+      document.getElementById('submitBtn').disabled = false;
+    });
   }
 
   function deleteExpense(id) {
-    expenses = expenses.filter(e => e.id !== id);
-    saveData();
-    renderExpenses();
-    calculate();
+    if(!confirm('האם למחוק הוצאה זו?')) return;
+
+    setSyncStatus('מוחק...', 'syncing');
+
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', id: id })
+    })
+    .then(res => res.json())
+    .then(() => {
+      fetchDataFromCloud();
+    });
   }
 
-  function clearAllData() {
-    if(confirm('האם למחוק את כל ההוצאות שנרשמו?')) {
-      expenses = [];
-      saveData();
-      renderExpenses();
-      calculate();
-    }
+  function renderPayers() {
+    const container = document.getElementById('payersContainer');
+    container.innerHTML = '';
+    const list = [
+      { id: 'A1', name: names.A1, type: 'a' },
+      { id: 'A2', name: names.A2, type: 'a' },
+      { id: 'B1', name: names.B1, type: 'b' },
+      { id: 'B2', name: names.B2, type: 'b' }
+    ];
+
+    list.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'payer-btn' + (activePayer === item.id ? ' active-' + item.type : '');
+      btn.innerText = item.name;
+      btn.onclick = function() { activePayer = item.id; renderPayers(); };
+      container.appendChild(btn);
+    });
+  }
+
+  function openSplitModal() {
+    tempSplitA = splitA;
+    document.getElementById('splitRange').value = tempSplitA;
+    updateModalLabel(tempSplitA);
+    document.getElementById('splitModal').hidden = false;
+  }
+
+  function closeSplitModal() { document.getElementById('splitModal').hidden = true; }
+  function updateModalLabel(val) { document.getElementById('modalLabel').innerText = val + '% / ' + (100 - val) + '%'; }
+  function saveSplit() {
+    splitA = parseInt(document.getElementById('splitRange').value, 10);
+    document.getElementById('splitDisplayText').innerText = splitA + '% / ' + (100 - splitA) + '%';
+    closeSplitModal();
+  }
+
+  function updateRates() {
+    rates.EUR = parseFloat(document.getElementById('rateEUR').value) || 4.0;
+    rates.USD = parseFloat(document.getElementById('rateUSD').value) || 3.7;
+    renderExpenses();
+    calculate();
   }
 
   function renderExpenses() {
@@ -683,11 +462,9 @@
 
     expenses.slice().reverse().forEach(exp => {
       const tr = document.createElement('tr');
-
       const rate = rates[exp.currency] || 1;
       const amountILS = (exp.amount * rate).toFixed(2);
       const payerName = names[exp.payer] || exp.payer;
-
       const formattedDate = exp.date ? exp.date.split('-').reverse().join('/') : '-';
 
       tr.innerHTML = `
@@ -721,9 +498,7 @@
 
     let totalPaidA = 0, totalPaidB = 0;
     let totalShareA = 0, totalShareB = 0;
-
-    let expensesA = [];
-    let expensesB = [];
+    let expensesA = [], expensesB = [];
 
     expenses.forEach(exp => {
       const rate = rates[exp.currency] || 1;
@@ -746,10 +521,7 @@
     const netA = totalPaidA - totalShareA;
     const netB = totalPaidB - totalShareB;
 
-    let html = '';
-
-    // שורה של בן רחמים
-    html += `
+    let html = `
       <tr>
         <td>
           <button class="toggle-details-btn" onclick="toggleFamilyDetails('A')">${expandedFamily.A ? '-' : '+'}</button>
@@ -763,12 +535,8 @@
       </tr>
     `;
 
-    // פירוט עבור בן רחמים
-    if(expandedFamily.A) {
-      html += renderFamilyDetailsRow(expensesA);
-    }
+    if(expandedFamily.A) html += renderFamilyDetailsRow(expensesA);
 
-    // שורה של לזרובסקי
     html += `
       <tr>
         <td>
@@ -783,10 +551,7 @@
       </tr>
     `;
 
-    // פירוט עבור לזרובסקי
-    if(expandedFamily.B) {
-      html += renderFamilyDetailsRow(expensesB);
-    }
+    if(expandedFamily.B) html += renderFamilyDetailsRow(expensesB);
 
     tbody.innerHTML = html;
 
@@ -801,15 +566,8 @@
 
   function renderFamilyDetailsRow(familyExpenses) {
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
-
     if(familyExpenses.length === 0) {
-      return `
-        <tr class="details-row">
-          <td colspan="4">
-            <div class="details-box empty-msg">משפחה זו לא שילמה הוצאות עדיין.</div>
-          </td>
-        </tr>
-      `;
+      return `<tr class="details-row"><td colspan="4"><div class="details-box empty-msg">משפחה זו לא שילמה הוצאות עדיין.</div></td></tr>`;
     }
 
     let rowsHtml = familyExpenses.map(exp => `
@@ -830,16 +588,10 @@
             <table class="details-table">
               <thead>
                 <tr>
-                  <th>תאריך</th>
-                  <th>תיאור</th>
-                  <th>משלם</th>
-                  <th>סכום במקור</th>
-                  <th>סכום ב-₪</th>
+                  <th>תאריך</th><th>תיאור</th><th>משלם</th><th>סכום במקור</th><th>סכום ב-₪</th>
                 </tr>
               </thead>
-              <tbody>
-                ${rowsHtml}
-              </tbody>
+              <tbody>${rowsHtml}</tbody>
             </table>
           </div>
         </td>
@@ -847,31 +599,8 @@
     `;
   }
 
-  function saveData() {
-    const data = {
-      rates: rates,
-      expenses: expenses
-    };
-    try { localStorage.setItem('trip_ledger_data', JSON.stringify(data)); } catch(e){}
-  }
-
-  function loadData() {
-    try {
-      const saved = localStorage.getItem('trip_ledger_data');
-      if(saved) {
-        const data = JSON.parse(saved);
-        if(data.rates) {
-          rates = data.rates;
-          document.getElementById('rateEUR').value = rates.EUR;
-          document.getElementById('rateUSD').value = rates.USD;
-        }
-        if(data.expenses) expenses = data.expenses;
-      }
-    } catch(e){}
-  }
-
   function escapeHtml(str) {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
 </script>
 
