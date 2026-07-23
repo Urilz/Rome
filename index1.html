@@ -387,11 +387,20 @@
       text-decoration: underline;
       cursor: pointer;
     }
+
+    .sync-status {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: left;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
+
+  <div id="syncStatus" class="sync-status">מצב סנכרון: לא מחובר</div>
 
   <!-- כותרת וזוגות -->
   <div class="header-card">
@@ -544,6 +553,9 @@
 </div>
 
 <script>
+  // נא להחליף בכתובת ה-Web App שהתקבלה מ-Google Apps Script
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
+
   let activePayer = 'A1';
   let splitA = 50;
   let tempSplitA = 50;
@@ -564,11 +576,13 @@
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today >= "2026-06-01" ? today : "2026-06-01";
 
-    loadData();
     renderPayers();
-    renderExpenses();
-    calculate();
+    loadData();
   };
+
+  function updateSyncStatus(msg) {
+    document.getElementById('syncStatus').innerText = 'מצב סנכרון: ' + msg;
+  }
 
   function renderPayers() {
     const container = document.getElementById('payersContainer');
@@ -848,11 +862,22 @@
   }
 
   function saveData() {
-    const data = {
-      rates: rates,
-      expenses: expenses
-    };
-    try { localStorage.setItem('trip_ledger_data', JSON.stringify(data)); } catch(e){}
+    const payload = { rates, expenses };
+    try {
+      localStorage.setItem('trip_ledger_data', JSON.stringify(payload));
+    } catch(e) {}
+
+    if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_URL") {
+      updateSyncStatus('שומר ב-Google Sheets...');
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(() => updateSyncStatus('מעודכן מול Google Sheets'))
+      .catch(e => updateSyncStatus('שגיאה בשמירה מרחוק'));
+    }
   }
 
   function loadData() {
@@ -866,8 +891,30 @@
           document.getElementById('rateUSD').value = rates.USD;
         }
         if(data.expenses) expenses = data.expenses;
+        renderExpenses();
+        calculate();
       }
-    } catch(e){}
+    } catch(e) {}
+
+    if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_URL") {
+      updateSyncStatus('טוען מ-Google Sheets...');
+      fetch(GOOGLE_SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => {
+          if (data) {
+            if (data.rates) {
+              rates = data.rates;
+              document.getElementById('rateEUR').value = rates.EUR;
+              document.getElementById('rateUSD').value = rates.USD;
+            }
+            if (data.expenses) expenses = data.expenses;
+            renderExpenses();
+            calculate();
+            updateSyncStatus('מתוזמן ומעודכן');
+          }
+        })
+        .catch(e => updateSyncStatus('עובד במצב מקומי (מחשב בלבד)'));
+    }
   }
 
   function escapeHtml(str) {
