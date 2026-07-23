@@ -3,517 +3,604 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משותפות</title>
+  <title>ניהול הוצאות משותף - רומא ודרומה</title>
+
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+    
     :root {
-      --bg-color: #fdfbf7;
-      --card-bg: #ffffff;
-      --primary: #4a6fa5;
-      --text: #2c3e50;
-      --border: #e2e8f0;
-      --accent: #e67e22;
+      --bg: #FBF1E4;
+      --card-bg: #FFFFFF;
+      --header-bg: #FAE9D0;
+      --text: #402A1E;
+      --text-muted: #9A7154;
+      --teal: #D9662B;
+      --rust: #EDA24A;
+      --border: #E7C9A3;
+      --font: 'Rubik', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: var(--bg-color);
+    * { box-sizing: border-box; font-family: var(--font); }
+
+    html, body {
+      background-color: var(--bg);
       color: var(--text);
-      margin: 0;
-      padding: 15px;
-      padding-bottom: 150px;
+      margin: 0; padding: 0;
+      direction: rtl; width: 100%; min-height: 100vh;
     }
 
     .container {
-      max-width: 600px;
-      margin: 0 auto;
-      position: relative;
+      width: 100%; max-width: 720px;
+      margin: 0 auto; padding: 16px 16px 40px 16px;
     }
 
-    .version-tag {
-      position: absolute;
-      top: 0;
-      left: 0;
-      font-size: 11px;
-      color: #94a3b8;
-      background: #f1f5f9;
-      padding: 2px 6px;
-      border-radius: 4px;
+    .header-card {
+      background: var(--header-bg);
+      border-radius: 16px; padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
     }
 
-    h2, h3 {
-      text-align: center;
-      color: var(--text);
-    }
+    .main-title { font-size: 26px; font-weight: 700; margin: 0 0 4px 0; }
+    .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600; }
+
+    .couples-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .couple-box { background: rgba(255, 255, 255, 0.6); border-radius: 10px; padding: 12px; }
+    .couple-title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-a { background: var(--teal); }
+    .dot-b { background: var(--rust); }
+    .names-list { font-size: 13px; color: var(--text); line-height: 1.5; }
 
     .card {
       background: var(--card-bg);
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom: 15px;
       border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
     }
 
-    .form-group {
-      margin-bottom: 12px;
+    .card-title {
+      font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 14px;
+      display: flex; justify-content: space-between; align-items: center;
     }
 
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 4px;
-      font-size: 0.9em;
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; background: #FFFDF9; color: var(--text); outline: none;
     }
 
-    input, select {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-      font-size: 1em;
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .payers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .payer-btn {
+      padding: 10px; border: 1px solid var(--border);
+      background: #FFFDF9; border-radius: 8px; font-size: 13px;
+      font-weight: 600; color: var(--text); cursor: pointer; text-align: center;
+    }
+    .payer-btn.active-a { background: var(--teal); color: white; border-color: var(--teal); }
+    .payer-btn.active-b { background: var(--rust); color: white; border-color: var(--rust); }
+
+    .split-box {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #FFFDF9; border: 1px solid var(--border);
+      padding: 10px 12px; border-radius: 8px;
     }
 
-    button.btn-submit {
-      width: 100%;
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px;
-      font-size: 1em;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
+    .split-btn {
+      background: transparent; border: 1px solid var(--teal); color: var(--teal);
+      border-radius: 6px; padding: 6px 10px; font-weight: 700; font-size: 12px; cursor: pointer;
     }
 
-    button.btn-cancel {
-      width: 100%;
-      background-color: #95a5a6;
-      color: white;
-      border: none;
-      padding: 8px;
-      font-size: 0.9em;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 5px;
-      display: none;
+    .submit-btn {
+      width: 100%; background: var(--text); color: var(--bg);
+      border: none; padding: 14px; border-radius: 8px;
+      font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px;
     }
 
-    details {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 10px;
-      overflow: hidden;
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; }
+    th { background-color: var(--header-bg); padding: 10px 8px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+
+    .delete-btn { background: none; border: none; color: #cc0000; font-size: 16px; cursor: pointer; }
+    .toggle-details-btn {
+      background: #FFFDF9; border: 1px solid var(--border); border-radius: 4px;
+      width: 24px; height: 24px; font-weight: bold; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; margin-left: 6px;
     }
 
-    summary {
-      padding: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      background: #f8fafc;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .details-row { background-color: rgba(255, 253, 249, 0.7); }
+    .details-box { padding: 10px; border: 1px dashed var(--border); border-radius: 8px; margin: 4px 0; background: #fff; }
+    .details-table { width: 100%; font-size: 12px; }
+    .details-table th { background: #f7ebd9; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85em;
+    .modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+      padding: 20px; z-index: 1000;
     }
+    .modal[hidden] { display: none; }
+    .modal-content { background: var(--bg); border-radius: 14px; padding: 20px; width: 100%; max-width: 320px; text-align: center; }
+    .range-slider { width: 100%; margin: 16px 0; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer; }
+    .btn-confirm { background: var(--text); color: var(--bg); }
+    .btn-cancel { background: transparent; border: 1px solid var(--border) !important; color: var(--text); }
 
-    th, td {
-      padding: 8px 4px;
-      text-align: right;
-      border-bottom: 1px solid var(--border);
+    .summary-card { background: var(--header-bg); border-radius: 14px; padding: 20px; }
+    .summary-table th { background-color: rgba(255, 255, 255, 0.5); }
+    .summary-result-box {
+      background: #FFFFFF; border: 2px solid var(--teal);
+      border-radius: 10px; padding: 16px; margin-top: 16px; text-align: center;
     }
-
-    th {
-      background: #f1f5f9;
-    }
-
-    .family-total-row {
-      font-weight: bold;
-      background-color: #f8fafc;
-      border-top: 2px solid var(--border);
-    }
-
-    .action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1.1em;
-      padding: 0 3px;
-    }
-
-    .btn-edit { color: #2980b9; }
-    .btn-delete { color: #e74c3c; }
-
-    .footer-summary {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border-top: 2px solid var(--primary);
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-      padding: 10px 15px;
-      font-size: 0.82em;
-      z-index: 1000;
-    }
-
-    .footer-content {
-      max-width: 600px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .footer-line {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px dashed #e2e8f0;
-      padding-bottom: 2px;
-    }
-
-    .footer-line.final {
-      border-bottom: none;
-      font-weight: bold;
-      color: var(--accent);
-      font-size: 1.05em;
-      margin-top: 2px;
-    }
+    .summary-final-text { font-size: 20px; font-weight: 700; line-height: 1.4; margin-top: 4px; }
+    .empty-msg { text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px 0; }
+    
+    .status-badge { font-size: 11px; padding: 4px 8px; border-radius: 12px; background: #e0e0e0; }
+    .status-badge.syncing { background: #fff3cd; color: #856404; }
+    .status-badge.online { background: #d4edda; color: #155724; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <span class="version-tag">v1.0.3</span>
-  <h2>ניהול הוצאות משותפות</h2>
 
-  <!-- טופס -->
+  <div class="header-card">
+    <h1 class="main-title">רומא ודרומה</h1>
+    <div class="subtitle">ניהול הוצאות משותפות ומסונכרן בזמן אמת</div>
+
+    <div class="couples-grid">
+      <div class="couple-box">
+        <div class="couple-title"><span class="dot dot-a"></span>משפחת בן רחמים</div>
+        <div class="names-list"><div>אורי</div><div>אדוה</div></div>
+      </div>
+      <div class="couple-box">
+        <div class="couple-title"><span class="dot dot-b"></span>משפחת לזרובסקי</div>
+        <div class="names-list"><div>אלחנן</div><div>רוית</div></div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
-    <h3 id="formTitle" style="margin-top:0; font-size:1.1em;">הוספת הוצאה חדשה</h3>
-    <form id="expenseForm">
-      <input type="hidden" id="editExpenseId" value="">
-
-      <div class="form-group">
-        <label>תאריך *</label>
-        <input type="date" id="expDate" required>
+    <div class="card-title">הוספת הוצאה</div>
+    
+    <div class="grid-2 form-group">
+      <div>
+        <label>תאריך</label>
+        <input type="date" id="expDate" min="2026-06-01">
       </div>
-
-      <div class="form-group">
-        <label>סעיף / תיאור (עברית בלבד) *</label>
-        <input type="text" id="expDesc" required pattern="[\u0590-\u05FF\s]+" title="נא להזין אותיות בעברית בלבד">
+      <div>
+        <label>תיאור ההוצאה</label>
+        <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק">
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>סכום *</label>
-        <input type="number" step="any" id="expAmount" required min="0.01">
+    <div class="grid-2 form-group">
+      <div>
+        <label>סכום</label>
+        <input type="number" id="amount" step="any" placeholder="0.00" inputmode="decimal">
       </div>
-
-      <div class="form-group">
-        <label>מטבע *</label>
-        <select id="expCurrency" required>
-          <option value="ILS">₪ (ש"ח)</option>
-          <option value="EUR">€ (יורו)</option>
+      <div>
+        <label>מטבע</label>
+        <select id="currency">
+          <option value="ILS">₪ (שקל)</option>
+          <option value="EUR">€ (אירו)</option>
           <option value="USD">$ (דולר)</option>
         </select>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>משלם *</label>
-        <select id="expPayer" required>
-          <option value="">בחר משלם...</option>
-          <option value="אלחנן">אלחנן</option>
-          <option value="רוית">רוית</option>
-          <option value="אורי">אורי</option>
-          <option value="אדוה">אדוה</option>
-        </select>
+    <div class="form-group">
+      <label>מי שילם?</label>
+      <div class="payers-grid" id="payersContainer"></div>
+    </div>
+
+    <div class="form-group">
+      <label>חלוקת תשלום</label>
+      <div class="split-box">
+        <span id="splitDisplayText" style="font-weight:600; font-size:14px;">50% / 50%</span>
+        <button type="button" class="split-btn" onclick="openSplitModal()">שינוי</button>
       </div>
+    </div>
 
-      <button type="submit" id="btnSubmit" class="btn-submit">הוסף הוצאה</button>
-      <button type="button" id="btnCancelEdit" class="btn-cancel" onclick="resetForm()">ביטול עריכה</button>
-    </form>
+    <button type="button" id="submitBtn" class="submit-btn" onclick="addExpense()">הוסף הוצאה</button>
   </div>
 
-  <!-- פירוט לפי משפחה -->
-  <h3>פירוט הוצאות</h3>
-  
-  <details id="acc-ben-rachamim">
-    <summary>
-      <span>משפחת בן רחמים (אלחנן ורוית)</span>
-      <span id="sum-ben-rachamim">0 ₪</span>
-    </summary>
-    <table>
-      <thead>
-        <tr>
-          <th>תאריך</th>
-          <th>תיאור</th>
-          <th>משלם</th>
-          <th>סכום במקור</th>
-          <th>בש"ח</th>
-          <th>פעולות</th>
-        </tr>
-      </thead>
-      <tbody id="list-ben-rachamim"></tbody>
-      <tfoot>
-        <tr class="family-total-row">
-          <td colspan="4">סה"כ הוצאות למשפחה:</td>
-          <td id="foot-ben-rachamim" colspan="2">0 ₪</td>
-        </tr>
-      </tfoot>
-    </table>
-  </details>
+  <div class="card">
+    <div class="card-title">
+      <span>הוצאות ששולמו</span>
+      <span id="syncStatus" class="status-badge">מסתנכרן...</span>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>תאריך</th>
+            <th>תיאור</th>
+            <th>סכום במטבע מקור</th>
+            <th>מטבע</th>
+            <th>סכום ב-₪</th>
+            <th>משלם</th>
+            <th>חלוקה</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="expensesList"></tbody>
+      </table>
+    </div>
+  </div>
 
-  <details id="acc-lazarovsky">
-    <summary>
-      <span>משפחת לזרובסקי (אורי ואדוה)</span>
-      <span id="sum-lazarovsky">0 ₪</span>
-    </summary>
-    <table>
-      <thead>
-        <tr>
-          <th>תאריך</th>
-          <th>תיאור</th>
-          <th>משלם</th>
-          <th>סכום במקור</th>
-          <th>בש"ח</th>
-          <th>פעולות</th>
-        </tr>
-      </thead>
-      <tbody id="list-lazarovsky"></tbody>
-      <tfoot>
-        <tr class="family-total-row">
-          <td colspan="4">סה"כ הוצאות למשפחה:</td>
-          <td id="foot-lazarovsky" colspan="2">0 ₪</td>
-        </tr>
-      </tfoot>
-    </table>
-  </details>
+  <div class="card">
+    <div class="card-title">שערי המרה (לפי ₪)</div>
+    <div class="grid-2">
+      <div>
+        <label>אירו (€)</label>
+        <input type="number" id="rateEUR" step="0.01" value="4.00" onchange="updateRates()" inputmode="decimal">
+      </div>
+      <div>
+        <label>דולר ($)</label>
+        <input type="number" id="rateUSD" step="0.01" value="3.70" onchange="updateRates()" inputmode="decimal">
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-card">
+    <div style="font-size:16px; font-weight:700; margin-bottom:12px;">סיכום חשבון חודשי ופירוט חישוב</div>
+    
+    <div class="table-container">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>משפחה</th>
+            <th>שילמו בפועל (₪)</th>
+            <th>חלקן בהוצאות (₪)</th>
+            <th>מאזן / הפרש (₪)</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody">
+          <tr><td colspan="4" class="empty-msg">אין עדיין נתונים לחישוב</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-result-box">
+      <div style="font-size:12px; font-weight:600; color:var(--text-muted);">בשורה התחתונה:</div>
+      <div class="summary-final-text" id="summaryFinalText">אין עדיין הוצאות</div>
+    </div>
+  </div>
 
 </div>
 
-<!-- תחתית דף קבועה -->
-<div class="footer-summary">
-  <div class="footer-content">
-    <div class="footer-line">
-      <span>סה"כ הוצאות בש"ח:</span>
-      <span id="total-all-ils">0 ₪</span>
-    </div>
-    <div class="footer-line">
-      <span>סה"כ משפחת בן רחמים:</span>
-      <span id="total-ben-rachamim-footer">0 ₪</span>
-    </div>
-    <div class="footer-line">
-      <span>סה"כ משפחת לזרובסקי:</span>
-      <span id="total-lazarovsky-footer">0 ₪</span>
-    </div>
-    <div class="footer-line final">
-      <span>התחשבנות סופית:</span>
-      <span id="final-settlement">-</span>
+<div class="modal" id="splitModal" hidden>
+  <div class="modal-content">
+    <div style="font-weight:700; margin-bottom:10px;">אחוז השתתפות בן רחמים</div>
+    <input type="range" id="splitRange" class="range-slider" min="0" max="100" value="50" oninput="updateModalLabel(this.value)">
+    <div id="modalLabel" style="font-weight:700; font-size:16px; margin-bottom:16px;">50% / 50%</div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="closeSplitModal()">ביטול</button>
+      <button type="button" class="btn-confirm" onclick="saveSplit()">אישור</button>
     </div>
   </div>
 </div>
 
 <script>
-  // *** יש להדביק את הקישור שלך כאן ***
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
-  const ADMIN_PIN = "1234";
+  // הזינו כאן את ה-URL שקיבלתם מ-Google Apps Script
+  const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
 
+  let activePayer = 'A1';
+  let splitA = 50;
+  let tempSplitA = 50;
+  
+  let rates = { ILS: 1, EUR: 4.0, USD: 3.7 };
   let expenses = [];
+  let expandedFamily = { A: false, B: false };
 
-  function formatMoney(num) {
-    return Math.round(Number(num) || 0).toLocaleString('he-IL');
+  const names = {
+    A1: 'אורי', A2: 'אדוה',
+    B1: 'אלחנן', B2: 'רוית'
+  };
+
+  window.onload = function() {
+    const dateInput = document.getElementById('expDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today >= "2026-06-01" ? today : "2026-06-01";
+
+    renderPayers();
+    fetchDataFromCloud();
+
+    // רענון אוטומטי של הנתונים מהענן כל 10 שניות
+    setInterval(fetchDataFromCloud, 10000);
+  };
+
+  function setSyncStatus(text, stateClass) {
+    const badge = document.getElementById('syncStatus');
+    badge.innerText = text;
+    badge.className = 'status-badge ' + stateClass;
   }
 
-  document.getElementById('expDate').valueAsDate = new Date();
-
-  document.getElementById('expDesc').addEventListener('input', function() {
-    this.value = this.value.replace(/[^\u0590-\u05FF\s]/g, '');
-  });
-
-  window.addEventListener('DOMContentLoaded', fetchExpenses);
-
-  async function fetchExpenses() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT_URL")) return;
-    try {
-      const res = await fetch(GOOGLE_SCRIPT_URL);
-      expenses = await res.json();
-      renderApp();
-    } catch (err) {
-      console.error("Fetch error:", err);
+  function fetchDataFromCloud() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT_URL")) {
+      setSyncStatus('נדרש הגדרת URL', 'syncing');
+      return;
     }
+
+    fetch(GOOGLE_SCRIPT_URL)
+      .then(res => res.json())
+      .then(data => {
+        expenses = data.map(item => ({
+          id: Number(item.id),
+          date: String(item.date).split('T')[0],
+          desc: item.desc,
+          amount: Number(item.amount),
+          currency: item.currency,
+          payer: item.payer,
+          splitA: Number(item.splitA)
+        }));
+        renderExpenses();
+        calculate();
+        setSyncStatus('מסונכרן', 'online');
+      })
+      .catch(err => {
+        console.error(err);
+        setSyncStatus('שגיאת סינכרון', 'syncing');
+      });
   }
 
-  function getFamily(payer) {
-    if (payer === 'אלחנן' || payer === 'רוית') return 'ben-rachamim';
-    if (payer === 'אורי' || payer === 'אדוה') return 'lazarovsky';
-    return '';
-  }
+  function addExpense() {
+    const dateVal = document.getElementById('expDate').value;
+    const desc = document.getElementById('desc').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const currency = document.getElementById('currency').value;
 
-  function checkAdmin() {
-    const pin = prompt("הזן קוד מנהל לבדיקת הרשאה:");
-    if (pin === ADMIN_PIN) return true;
-    alert("קוד שגוי!");
-    return false;
-  }
+    if(!dateVal || !desc || isNaN(amount) || amount <= 0) {
+      alert('נא למלא תאריך, תיאור וסכום תקין');
+      return;
+    }
 
-  document.getElementById('expenseForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const editId = document.getElementById('editExpenseId').value;
-    const isEditMode = Boolean(editId);
-
-    const expenseData = {
-      id: isEditMode ? editId : Date.now().toString(),
-      date: document.getElementById('expDate').value,
-      desc: document.getElementById('expDesc').value.trim(),
-      amount: parseFloat(document.getElementById('expAmount').value),
-      currency: document.getElementById('expCurrency').value,
-      payer: document.getElementById('expPayer').value,
-      splitA: 50
+    const exp = {
+      action: 'add',
+      id: Date.now(),
+      date: dateVal,
+      desc: desc,
+      amount: amount,
+      currency: currency,
+      payer: activePayer,
+      splitA: splitA
     };
 
-    if (isEditMode) {
-      const index = expenses.findIndex(x => x.id == editId);
-      if (index !== -1) expenses[index] = expenseData;
-    } else {
-      expenses.push(expenseData);
-    }
+    setSyncStatus('שומר...', 'syncing');
+    document.getElementById('submitBtn').disabled = true;
 
-    renderApp();
-    resetForm();
-
-    try {
-      if (isEditMode) {
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'delete', id: editId })
-        });
-      }
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'add', ...expenseData })
-      });
-    } catch (err) {
-      alert("שגיאה בסנכרון מול הענן");
-    }
-  });
-
-  function startEdit(id) {
-    if (!checkAdmin()) return;
-
-    const item = expenses.find(x => x.id == id);
-    if (!item) return;
-
-    document.getElementById('editExpenseId').value = item.id;
-    document.getElementById('expDate').value = item.date;
-    document.getElementById('expDesc').value = item.desc;
-    document.getElementById('expAmount').value = item.amount;
-    document.getElementById('expCurrency').value = item.currency;
-    document.getElementById('expPayer').value = item.payer;
-
-    document.getElementById('formTitle').innerText = "עריכת הוצאה";
-    document.getElementById('btnSubmit').innerText = "עדכן הוצאה";
-    document.getElementById('btnCancelEdit').style.display = "block";
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(exp)
+    })
+    .then(res => res.json())
+    .then(() => {
+      document.getElementById('desc').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('submitBtn').disabled = false;
+      fetchDataFromCloud();
+    })
+    .catch(err => {
+      alert('שגיאה בשמירת הנתונים בענן');
+      document.getElementById('submitBtn').disabled = false;
+    });
   }
 
-  function resetForm() {
-    document.getElementById('expenseForm').reset();
-    document.getElementById('editExpenseId').value = "";
-    document.getElementById('expDate').valueAsDate = new Date();
-    document.getElementById('formTitle').innerText = "הוספת הוצאה חדשה";
-    document.getElementById('btnSubmit').innerText = "הוסף הוצאה";
-    document.getElementById('btnCancelEdit').style.display = "none";
+  function deleteExpense(id) {
+    if(!confirm('האם למחוק הוצאה זו?')) return;
+
+    setSyncStatus('מוחק...', 'syncing');
+
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', id: id })
+    })
+    .then(res => res.json())
+    .then(() => {
+      fetchDataFromCloud();
+    });
   }
 
-  async function deleteExpense(id) {
-    if (!checkAdmin()) return;
-    if (!confirm("האם למחוק הוצאה זו?")) return;
+  function renderPayers() {
+    const container = document.getElementById('payersContainer');
+    container.innerHTML = '';
+    const list = [
+      { id: 'A1', name: names.A1, type: 'a' },
+      { id: 'A2', name: names.A2, type: 'a' },
+      { id: 'B1', name: names.B1, type: 'b' },
+      { id: 'B2', name: names.B2, type: 'b' }
+    ];
 
-    expenses = expenses.filter(x => x.id != id);
-    renderApp();
+    list.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'payer-btn' + (activePayer === item.id ? ' active-' + item.type : '');
+      btn.innerText = item.name;
+      btn.onclick = function() { activePayer = item.id; renderPayers(); };
+      container.appendChild(btn);
+    });
+  }
 
-    try {
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'delete', id: id })
-      });
-    } catch (err) {
-      alert("שגיאה במחיקת הנתונים מהענן");
+  function openSplitModal() {
+    tempSplitA = splitA;
+    document.getElementById('splitRange').value = tempSplitA;
+    updateModalLabel(tempSplitA);
+    document.getElementById('splitModal').hidden = false;
+  }
+
+  function closeSplitModal() { document.getElementById('splitModal').hidden = true; }
+  function updateModalLabel(val) { document.getElementById('modalLabel').innerText = val + '% / ' + (100 - val) + '%'; }
+  function saveSplit() {
+    splitA = parseInt(document.getElementById('splitRange').value, 10);
+    document.getElementById('splitDisplayText').innerText = splitA + '% / ' + (100 - splitA) + '%';
+    closeSplitModal();
+  }
+
+  function updateRates() {
+    rates.EUR = parseFloat(document.getElementById('rateEUR').value) || 4.0;
+    rates.USD = parseFloat(document.getElementById('rateUSD').value) || 3.7;
+    renderExpenses();
+    calculate();
+  }
+
+  function renderExpenses() {
+    const tbody = document.getElementById('expensesList');
+    tbody.innerHTML = '';
+
+    if(expenses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
+      return;
     }
-  }
 
-  function renderApp() {
-    const listBR = document.getElementById('list-ben-rachamim');
-    const listLZ = document.getElementById('list-lazarovsky');
+    const symbols = { ILS: '₪', EUR: '€', USD: '$' };
 
-    listBR.innerHTML = '';
-    listLZ.innerHTML = '';
+    expenses.slice().reverse().forEach(exp => {
+      const tr = document.createElement('tr');
+      const rate = rates[exp.currency] || 1;
+      const amountILS = (exp.amount * rate).toFixed(2);
+      const payerName = names[exp.payer] || exp.payer;
+      const formattedDate = exp.date ? exp.date.split('-').reverse().join('/') : '-';
 
-    let sumBR = 0;
-    let sumLZ = 0;
-
-    expenses.forEach(item => {
-      const family = getFamily(item.payer);
-      
-      let amountILS = item.amount;
-      let symbol = '₪';
-      if (item.currency === 'EUR') { symbol = '€'; amountILS = item.amount * 4.0; }
-      if (item.currency === 'USD') { symbol = '$'; amountILS = item.amount * 3.7; }
-
-      if (family === 'ben-rachamim') sumBR += amountILS;
-      if (family === 'lazarovsky') sumLZ += amountILS;
-
-      const rowHtml = `
-        <tr>
-          <td>${item.date}</td>
-          <td>${item.desc}</td>
-          <td>${item.payer}</td>
-          <td>${formatMoney(item.amount)} ${symbol}</td>
-          <td>${formatMoney(amountILS)} ₪</td>
-          <td>
-            <button class="action-btn btn-edit" title="ערוך" onclick="startEdit('${item.id}')">✎</button>
-            <button class="action-btn btn-delete" title="מחק" onclick="deleteExpense('${item.id}')">✕</button>
-          </td>
-        </tr>
+      tr.innerHTML = `
+        <td>${formattedDate}</td>
+        <td><strong>${escapeHtml(exp.desc)}</strong></td>
+        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)}</td>
+        <td style="text-align:center;"><strong>${symbols[exp.currency]}</strong></td>
+        <td style="direction:ltr; text-align:right;"><strong>${amountILS} ₪</strong></td>
+        <td>${escapeHtml(payerName)}</td>
+        <td>${exp.splitA}% / ${100-exp.splitA}%</td>
+        <td><button class="delete-btn" onclick="deleteExpense(${exp.id})" title="מחק">✕</button></td>
       `;
+      tbody.appendChild(tr);
+    });
+  }
 
-      if (family === 'ben-rachamim') listBR.innerHTML += rowHtml;
-      if (family === 'lazarovsky') listLZ.innerHTML += rowHtml;
+  function toggleFamilyDetails(famKey) {
+    expandedFamily[famKey] = !expandedFamily[famKey];
+    calculate();
+  }
+
+  function calculate() {
+    const tbody = document.getElementById('summaryTableBody');
+    const summaryFinalEl = document.getElementById('summaryFinalText');
+
+    if(expenses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">אין עדיין נתונים לחישוב</td></tr>';
+      summaryFinalEl.innerText = 'אין עדיין הוצאות';
+      return;
+    }
+
+    let totalPaidA = 0, totalPaidB = 0;
+    let totalShareA = 0, totalShareB = 0;
+    let expensesA = [], expensesB = [];
+
+    expenses.forEach(exp => {
+      const rate = rates[exp.currency] || 1;
+      const amountILS = exp.amount * rate;
+      const shareA = amountILS * (exp.splitA / 100);
+      const shareB = amountILS - shareA;
+
+      totalShareA += shareA;
+      totalShareB += shareB;
+
+      if(exp.payer.startsWith('A')) {
+        totalPaidA += amountILS;
+        expensesA.push({ ...exp, amountILS });
+      } else {
+        totalPaidB += amountILS;
+        expensesB.push({ ...exp, amountILS });
+      }
     });
 
-    const strBR = formatMoney(sumBR) + " ₪";
-    const strLZ = formatMoney(sumLZ) + " ₪";
+    const netA = totalPaidA - totalShareA;
+    const netB = totalPaidB - totalShareB;
 
-    document.getElementById('sum-ben-rachamim').innerText = strBR;
-    document.getElementById('foot-ben-rachamim').innerText = strBR;
+    let html = `
+      <tr>
+        <td>
+          <button class="toggle-details-btn" onclick="toggleFamilyDetails('A')">${expandedFamily.A ? '-' : '+'}</button>
+          <strong>משפחת בן רחמים</strong>
+        </td>
+        <td style="direction:ltr; text-align:right;">${totalPaidA.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${totalShareA.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right; color: ${netA >= 0 ? 'green' : 'red'};">
+          <strong>${netA >= 0 ? '+' : ''}${netA.toFixed(2)} ₪</strong>
+        </td>
+      </tr>
+    `;
 
-    document.getElementById('sum-lazarovsky').innerText = strLZ;
-    document.getElementById('foot-lazarovsky').innerText = strLZ;
+    if(expandedFamily.A) html += renderFamilyDetailsRow(expensesA);
 
-    const totalAll = sumBR + sumLZ;
-    document.getElementById('total-all-ils').innerText = formatMoney(totalAll) + " ₪";
-    document.getElementById('total-ben-rachamim-footer').innerText = strBR;
-    document.getElementById('total-lazarovsky-footer').innerText = strLZ;
+    html += `
+      <tr>
+        <td>
+          <button class="toggle-details-btn" onclick="toggleFamilyDetails('B')">${expandedFamily.B ? '-' : '+'}</button>
+          <strong>משפחת לזרובסקי</strong>
+        </td>
+        <td style="direction:ltr; text-align:right;">${totalPaidB.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${totalShareB.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right; color: ${netB >= 0 ? 'green' : 'red'};">
+          <strong>${netB >= 0 ? '+' : ''}${netB.toFixed(2)} ₪</strong>
+        </td>
+      </tr>
+    `;
 
-    const half = totalAll / 2;
-    const diff = sumBR - half;
-    
-    const finalElem = document.getElementById('final-settlement');
-    if (Math.abs(diff) < 1) {
-      finalElem.innerText = "החשבון מאוזן!";
-    } else if (diff > 0) {
-      finalElem.innerText = `משפחת לזרובסקי מעבירה לבן רחמים: ${formatMoney(diff)} ₪`;
+    if(expandedFamily.B) html += renderFamilyDetailsRow(expensesB);
+
+    tbody.innerHTML = html;
+
+    if(Math.abs(netA) < 0.1) {
+      summaryFinalEl.innerText = 'החשבון מאוזן לחלוטין! 🎉';
+    } else if(netA > 0) {
+      summaryFinalEl.innerHTML = `משפחת לזרובסקי משלמת למשפחת בן רחמים<br><span style="color:var(--teal); font-size:24px;">${netA.toFixed(2)} ₪</span>`;
     } else {
-      finalElem.innerText = `משפחת בן רחמים מעבירה ללזרובסקי: ${formatMoney(Math.abs(diff))} ₪`;
+      summaryFinalEl.innerHTML = `משפחת בן רחמים משלמת למשפחת לזרובסקי<br><span style="color:var(--rust); font-size:24px;">${Math.abs(netA).toFixed(2)} ₪</span>`;
     }
+  }
+
+  function renderFamilyDetailsRow(familyExpenses) {
+    const symbols = { ILS: '₪', EUR: '€', USD: '$' };
+    if(familyExpenses.length === 0) {
+      return `<tr class="details-row"><td colspan="4"><div class="details-box empty-msg">משפחה זו לא שילמה הוצאות עדיין.</div></td></tr>`;
+    }
+
+    let rowsHtml = familyExpenses.map(exp => `
+      <tr>
+        <td>${exp.date ? exp.date.split('-').reverse().join('/') : '-'}</td>
+        <td>${escapeHtml(exp.desc)}</td>
+        <td>${names[exp.payer] || exp.payer}</td>
+        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)} ${symbols[exp.currency]}</td>
+        <td style="direction:ltr; text-align:right;"><strong>${exp.amountILS.toFixed(2)} ₪</strong></td>
+      </tr>
+    `).join('');
+
+    return `
+      <tr class="details-row">
+        <td colspan="4">
+          <div class="details-box">
+            <div style="font-weight:bold; margin-bottom:6px; font-size:12px;">פירוט הוצאות ששולמו:</div>
+            <table class="details-table">
+              <thead>
+                <tr>
+                  <th>תאריך</th><th>תיאור</th><th>משלם</th><th>סכום במקור</th><th>סכום ב-₪</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
 </script>
 
