@@ -42,6 +42,19 @@
       padding: 16px 16px 40px 16px;
     }
 
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .version-tag {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
     /* כותרת וזוגות */
     .header-card {
       background: var(--header-bg);
@@ -251,16 +264,16 @@
       white-space: nowrap;
     }
 
-    .delete-btn {
+    .action-btn {
       background: none;
       border: none;
-      color: #cc0000;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 2px 4px;
     }
+    .edit-btn { color: #2b6cb0; }
+    .delete-btn { color: #cc0000; }
 
-    /* כפתורי פלוס/מינוס להרחבת פירוט */
     .toggle-details-btn {
       background: #FFFDF9;
       border: 1px solid var(--border);
@@ -298,7 +311,13 @@
       background: #f7ebd9;
     }
 
-    /* חלון קופץ לשינוי חלוקה */
+    .details-summary-row td {
+      border-top: 2px solid var(--border);
+      font-weight: bold;
+      background: #fcf4ea;
+    }
+
+    /* חלונות קופצים */
     .modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -357,19 +376,32 @@
 
     .summary-result-box {
       background: #FFFFFF;
-      border: 2px solid var(--teal);
+      border: 1.5px solid var(--border);
       border-radius: 10px;
-      padding: 16px;
+      padding: 12px;
       margin-top: 16px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      font-size: 12px;
+      line-height: 1.6;
     }
 
-    .summary-final-text {
-      font-size: 20px;
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px dashed #f0d9bd;
+    }
+    .summary-line:last-child {
+      border-bottom: none;
+    }
+
+    .summary-final-line {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1.5px solid var(--teal);
+      font-size: 14px;
       font-weight: 700;
-      line-height: 1.4;
-      margin-top: 4px;
+      text-align: center;
+      color: var(--teal);
     }
 
     .empty-msg {
@@ -391,8 +423,13 @@
     .sync-status {
       font-size: 11px;
       color: var(--text-muted);
-      text-align: left;
-      margin-bottom: 8px;
+    }
+
+    .error-hint {
+      color: #cc0000;
+      font-size: 11px;
+      display: none;
+      margin-top: 2px;
     }
   </style>
 </head>
@@ -400,9 +437,12 @@
 
 <div class="container">
 
-  <div id="syncStatus" class="sync-status">מצב סנכרון: לא מחובר</div>
+  <div class="top-bar">
+    <div id="syncStatus" class="sync-status">מצב סנכרון: לא מחובר</div>
+    <div class="version-tag">גרסה 1.1.0</div>
+  </div>
 
-  <!-- כותרת וזוגות -->
+  <!-- כותרת וזוגות מעודכנים -->
   <div class="header-card">
     <h1 class="main-title">רומא ודרומה</h1>
     <div class="subtitle">ניהול הוצאות משותפות</div>
@@ -411,15 +451,15 @@
       <div class="couple-box">
         <div class="couple-title"><span class="dot dot-a"></span>משפחת בן רחמים</div>
         <div class="names-list">
-          <div>אורי</div>
-          <div>אדוה</div>
+          <div>אלחנן</div>
+          <div>רוית</div>
         </div>
       </div>
       <div class="couple-box">
         <div class="couple-title"><span class="dot dot-b"></span>משפחת לזרובסקי</div>
         <div class="names-list">
-          <div>אלחנן</div>
-          <div>רוית</div>
+          <div>אורי</div>
+          <div>אדוה</div>
         </div>
       </div>
     </div>
@@ -427,27 +467,29 @@
 
   <!-- טופס הוספה -->
   <div class="card">
-    <div class="card-title">הוספת הוצאה</div>
+    <div class="card-title" id="formCardTitle">הוספת הוצאה</div>
+    <input type="hidden" id="editingExpId" value="">
     
     <div class="grid-2 form-group">
       <div>
-        <label>תאריך</label>
-        <input type="date" id="expDate" min="2026-06-01">
+        <label>תאריך *</label>
+        <input type="date" id="expDate" min="2026-06-01" required>
       </div>
       <div>
-        <label>תיאור ההוצאה</label>
-        <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק">
+        <label>תיאור ההוצאה (עברית בלבד) *</label>
+        <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק" oninput="validateHebrew(this)" required>
+        <div id="hebrewError" class="error-hint">יש להזין בעברית בלבד</div>
       </div>
     </div>
 
     <div class="grid-2 form-group">
       <div>
-        <label>סכום</label>
-        <input type="number" id="amount" step="any" placeholder="0.00" inputmode="decimal">
+        <label>סכום *</label>
+        <input type="number" id="amount" step="any" placeholder="0" inputmode="decimal" required>
       </div>
       <div>
-        <label>מטבע</label>
-        <select id="currency">
+        <label>מטבע *</label>
+        <select id="currency" required>
           <option value="ILS">₪ (שקל)</option>
           <option value="EUR">€ (אירו)</option>
           <option value="USD">$ (דולר)</option>
@@ -456,7 +498,7 @@
     </div>
 
     <div class="form-group">
-      <label>מי שילם?</label>
+      <label>מי שילם? *</label>
       <div class="payers-grid" id="payersContainer"></div>
     </div>
 
@@ -468,7 +510,7 @@
       </div>
     </div>
 
-    <button type="button" class="submit-btn" onclick="addExpense()">הוסף הוצאה</button>
+    <button type="button" class="submit-btn" id="submitBtn" onclick="saveExpenseForm()">הוסף הוצאה</button>
   </div>
 
   <!-- רשימת הוצאות בטבלה -->
@@ -483,12 +525,12 @@
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>
-            <th>סכום במטבע מקור</th>
+            <th>סכום במקור</th>
             <th>מטבע</th>
             <th>סכום ב-₪</th>
             <th>משלם</th>
             <th>חלוקה</th>
-            <th></th>
+            <th>פעולות</th>
           </tr>
         </thead>
         <tbody id="expensesList"></tbody>
@@ -531,9 +573,23 @@
       </table>
     </div>
 
-    <div class="summary-result-box">
-      <div style="font-size:12px; font-weight:600; color:var(--text-muted);">בשורה התחתונה:</div>
-      <div class="summary-final-text" id="summaryFinalText">אין עדיין הוצאות</div>
+    <!-- באונדר תחתון חדש ומוקטן -->
+    <div class="summary-result-box" id="summaryResultBox">
+      <div class="summary-line">
+        <span>סה"כ הוצאות ב-₪:</span>
+        <strong id="summaryTotalAll">0 ₪</strong>
+      </div>
+      <div class="summary-line">
+        <span>סה"כ הוציאה משפחת בן רחמים:</span>
+        <strong id="summaryTotalA">0 ₪</strong>
+      </div>
+      <div class="summary-line">
+        <span>סה"כ הוציאה משפחת לזרובסקי:</span>
+        <strong id="summaryTotalB">0 ₪</strong>
+      </div>
+      <div class="summary-final-line" id="summaryFinalText">
+        אין עדיין הוצאות
+      </div>
     </div>
   </div>
 
@@ -553,8 +609,8 @@
 </div>
 
 <script>
-  // נא להחליף בכתובת ה-Web App שהתקבלה מ-Google Apps Script
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
+  const ADMIN_PASS = "7350";
 
   let activePayer = 'A1';
   let splitA = 50;
@@ -564,11 +620,12 @@
   let expenses = [];
   let expandedFamily = { A: false, B: false };
 
+  // מפת שיוך אנשים מעודכנת
   const names = {
-    A1: 'אורי',
-    A2: 'אדוה',
-    B1: 'אלחנן',
-    B2: 'רוית'
+    A1: 'אלחנן',
+    A2: 'רוית',
+    B1: 'אורי',
+    B2: 'אדוה'
   };
 
   window.onload = function() {
@@ -582,6 +639,23 @@
 
   function updateSyncStatus(msg) {
     document.getElementById('syncStatus').innerText = 'מצב סנכרון: ' + msg;
+  }
+
+  // פורמט מספרים: פסיק בלי ספרות עשרוניות
+  function formatMoney(num) {
+    return Math.round(num).toLocaleString('he-IL');
+  }
+
+  // בדיקת עברית בלבד בשילוב תווים מותרים לבנים
+  function validateHebrew(input) {
+    const regex = /^[\u0590-\u05FF\s0-9\-\.,'"]*$/;
+    const errEl = document.getElementById('hebrewError');
+    if (!regex.test(input.value)) {
+      errEl.style.display = 'block';
+      input.value = input.value.replace(/[^\u0590-\u05FF\s0-9\-\.,'"]/g, '');
+    } else {
+      errEl.style.display = 'none';
+    }
   }
 
   function renderPayers() {
@@ -637,38 +711,87 @@
     calculate();
   }
 
-  function addExpense() {
+  function authenticate() {
+    const pass = prompt("הזן סיסמת מנהל לביצוע הפעולה:");
+    if (pass === ADMIN_PASS) {
+      return true;
+    } else {
+      if(pass !== null) alert("סיסמה שגויה!");
+      return false;
+    }
+  }
+
+  function saveExpenseForm() {
     const dateVal = document.getElementById('expDate').value;
     const desc = document.getElementById('desc').value.trim();
     const amount = parseFloat(document.getElementById('amount').value);
     const currency = document.getElementById('currency').value;
+    const editingId = document.getElementById('editingExpId').value;
 
-    if(!dateVal || !desc || isNaN(amount) || amount <= 0) {
-      alert('נא למלא תאריך, תיאור וסכום תקין');
+    if (!dateVal || !desc || isNaN(amount) || amount <= 0 || !currency || !activePayer) {
+      alert('כל השדות הינם חובה. נא למלא את הטופס במלואו.');
       return;
     }
 
-    const exp = {
-      id: Date.now(),
-      date: dateVal,
-      desc: desc,
-      amount: amount,
-      currency: currency,
-      payer: activePayer,
-      splitA: splitA
-    };
+    if (editingId) {
+      const exp = expenses.find(e => e.id == editingId);
+      if (exp) {
+        exp.date = dateVal;
+        exp.desc = desc;
+        exp.amount = amount;
+        exp.currency = currency;
+        exp.payer = activePayer;
+        exp.splitA = splitA;
+      }
+      document.getElementById('editingExpId').value = '';
+      document.getElementById('formCardTitle').innerText = 'הוספת הוצאה';
+      document.getElementById('submitBtn').innerText = 'הוסף הוצאה';
+    } else {
+      const exp = {
+        id: Date.now(),
+        date: dateVal,
+        desc: desc,
+        amount: amount,
+        currency: currency,
+        payer: activePayer,
+        splitA: splitA
+      };
+      expenses.push(exp);
+    }
 
-    expenses.push(exp);
     saveData();
-
     document.getElementById('desc').value = '';
     document.getElementById('amount').value = '';
-
     renderExpenses();
     calculate();
   }
 
+  function editExpense(id) {
+    if (!authenticate()) return;
+
+    const exp = expenses.find(e => e.id === id);
+    if (!exp) return;
+
+    document.getElementById('editingExpId').value = exp.id;
+    document.getElementById('expDate').value = exp.date;
+    document.getElementById('desc').value = exp.desc;
+    document.getElementById('amount').value = exp.amount;
+    document.getElementById('currency').value = exp.currency;
+    activePayer = exp.payer;
+    splitA = exp.splitA;
+
+    document.getElementById('splitDisplayText').innerText = splitA + '% / ' + (100 - splitA) + '%';
+    renderPayers();
+
+    document.getElementById('formCardTitle').innerText = 'עריכת הוצאה';
+    document.getElementById('submitBtn').innerText = 'עדכן הוצאה';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function deleteExpense(id) {
+    if (!authenticate()) return;
+
     expenses = expenses.filter(e => e.id !== id);
     saveData();
     renderExpenses();
@@ -676,6 +799,8 @@
   }
 
   function clearAllData() {
+    if (!authenticate()) return;
+
     if(confirm('האם למחוק את כל ההוצאות שנרשמו?')) {
       expenses = [];
       saveData();
@@ -699,7 +824,7 @@
       const tr = document.createElement('tr');
 
       const rate = rates[exp.currency] || 1;
-      const amountILS = (exp.amount * rate).toFixed(2);
+      const amountILS = exp.amount * rate;
       const payerName = names[exp.payer] || exp.payer;
 
       const formattedDate = exp.date ? exp.date.split('-').reverse().join('/') : '-';
@@ -707,12 +832,15 @@
       tr.innerHTML = `
         <td>${formattedDate}</td>
         <td><strong>${escapeHtml(exp.desc)}</strong></td>
-        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)}</td>
+        <td style="direction:ltr; text-align:right;">${formatMoney(exp.amount)}</td>
         <td style="text-align:center;"><strong>${symbols[exp.currency]}</strong></td>
-        <td style="direction:ltr; text-align:right;"><strong>${amountILS} ₪</strong></td>
+        <td style="direction:ltr; text-align:right;"><strong>${formatMoney(amountILS)} ₪</strong></td>
         <td>${escapeHtml(payerName)}</td>
         <td>${exp.splitA}% / ${100-exp.splitA}%</td>
-        <td><button class="delete-btn" onclick="deleteExpense(${exp.id})" title="מחק">✕</button></td>
+        <td>
+          <button class="action-btn edit-btn" onclick="editExpense(${exp.id})" title="ערוך">✏️</button>
+          <button class="action-btn delete-btn" onclick="deleteExpense(${exp.id})" title="מחק">✕</button>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -730,6 +858,9 @@
     if(expenses.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">אין עדיין נתונים לחישוב</td></tr>';
       summaryFinalEl.innerText = 'אין עדיין הוצאות';
+      document.getElementById('summaryTotalAll').innerText = '0 ₪';
+      document.getElementById('summaryTotalA').innerText = '0 ₪';
+      document.getElementById('summaryTotalB').innerText = '0 ₪';
       return;
     }
 
@@ -759,6 +890,7 @@
 
     const netA = totalPaidA - totalShareA;
     const netB = totalPaidB - totalShareB;
+    const totalAll = totalPaidA + totalPaidB;
 
     let html = '';
 
@@ -769,17 +901,16 @@
           <button class="toggle-details-btn" onclick="toggleFamilyDetails('A')">${expandedFamily.A ? '-' : '+'}</button>
           <strong>משפחת בן רחמים</strong>
         </td>
-        <td style="direction:ltr; text-align:right;">${totalPaidA.toFixed(2)} ₪</td>
-        <td style="direction:ltr; text-align:right;">${totalShareA.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${formatMoney(totalPaidA)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${formatMoney(totalShareA)} ₪</td>
         <td style="direction:ltr; text-align:right; color: ${netA >= 0 ? 'green' : 'red'};">
-          <strong>${netA >= 0 ? '+' : ''}${netA.toFixed(2)} ₪</strong>
+          <strong>${netA >= 0 ? '+' : ''}${formatMoney(netA)} ₪</strong>
         </td>
       </tr>
     `;
 
-    // פירוט עבור בן רחמים
     if(expandedFamily.A) {
-      html += renderFamilyDetailsRow(expensesA);
+      html += renderFamilyDetailsRow(expensesA, totalPaidA);
     }
 
     // שורה של לזרובסקי
@@ -789,31 +920,35 @@
           <button class="toggle-details-btn" onclick="toggleFamilyDetails('B')">${expandedFamily.B ? '-' : '+'}</button>
           <strong>משפחת לזרובסקי</strong>
         </td>
-        <td style="direction:ltr; text-align:right;">${totalPaidB.toFixed(2)} ₪</td>
-        <td style="direction:ltr; text-align:right;">${totalShareB.toFixed(2)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${formatMoney(totalPaidB)} ₪</td>
+        <td style="direction:ltr; text-align:right;">${formatMoney(totalShareB)} ₪</td>
         <td style="direction:ltr; text-align:right; color: ${netB >= 0 ? 'green' : 'red'};">
-          <strong>${netB >= 0 ? '+' : ''}${netB.toFixed(2)} ₪</strong>
+          <strong>${netB >= 0 ? '+' : ''}${formatMoney(netB)} ₪</strong>
         </td>
       </tr>
     `;
 
-    // פירוט עבור לזרובסקי
     if(expandedFamily.B) {
-      html += renderFamilyDetailsRow(expensesB);
+      html += renderFamilyDetailsRow(expensesB, totalPaidB);
     }
 
     tbody.innerHTML = html;
 
-    if(Math.abs(netA) < 0.1) {
+    // עדכון הסיכום התחתון המוקטן
+    document.getElementById('summaryTotalAll').innerText = `${formatMoney(totalAll)} ₪`;
+    document.getElementById('summaryTotalA').innerText = `${formatMoney(totalPaidA)} ₪`;
+    document.getElementById('summaryTotalB').innerText = `${formatMoney(totalPaidB)} ₪`;
+
+    if(Math.abs(netA) < 1) {
       summaryFinalEl.innerText = 'החשבון מאוזן לחלוטין! 🎉';
     } else if(netA > 0) {
-      summaryFinalEl.innerHTML = `משפחת לזרובסקי משלמת למשפחת בן רחמים<br><span style="color:var(--teal); font-size:24px;">${netA.toFixed(2)} ₪</span>`;
+      summaryFinalEl.innerHTML = `משפחת לזרובסקי משלמת למשפחת בן רחמים: <strong>${formatMoney(netA)} ₪</strong>`;
     } else {
-      summaryFinalEl.innerHTML = `משפחת בן רחמים משלמת למשפחת לזרובסקי<br><span style="color:var(--rust); font-size:24px;">${Math.abs(netA).toFixed(2)} ₪</span>`;
+      summaryFinalEl.innerHTML = `משפחת בן רחמים משלמת למשפחת לזרובסקי: <strong>${formatMoney(Math.abs(netA))} ₪</strong>`;
     }
   }
 
-  function renderFamilyDetailsRow(familyExpenses) {
+  function renderFamilyDetailsRow(familyExpenses, totalPaid) {
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
 
     if(familyExpenses.length === 0) {
@@ -831,8 +966,8 @@
         <td>${exp.date ? exp.date.split('-').reverse().join('/') : '-'}</td>
         <td>${escapeHtml(exp.desc)}</td>
         <td>${names[exp.payer] || exp.payer}</td>
-        <td style="direction:ltr; text-align:right;">${exp.amount.toFixed(2)} ${symbols[exp.currency]}</td>
-        <td style="direction:ltr; text-align:right;"><strong>${exp.amountILS.toFixed(2)} ₪</strong></td>
+        <td style="direction:ltr; text-align:right;">${formatMoney(exp.amount)} ${symbols[exp.currency]}</td>
+        <td style="direction:ltr; text-align:right;"><strong>${formatMoney(exp.amountILS)} ₪</strong></td>
       </tr>
     `).join('');
 
@@ -853,6 +988,10 @@
               </thead>
               <tbody>
                 ${rowsHtml}
+                <tr class="details-summary-row">
+                  <td colspan="4"><strong>סה"כ הוצאות ששולמו על ידה:</strong></td>
+                  <td style="direction:ltr; text-align:right;"><strong>${formatMoney(totalPaid)} ₪</strong></td>
+                </tr>
               </tbody>
             </table>
           </div>
