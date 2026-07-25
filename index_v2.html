@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.2.0</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.3.0</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -72,9 +72,9 @@
     input:focus, select:focus { border-color: var(--accent-orange); }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* כפתורי משלמים - עיצוב תואם למקור */
+    /* כפתורי משלמים */
     .payers-grid {
-      display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; margin-bottom: 16px;
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; margin-bottom: 14px;
     }
     .payer-btn {
       padding: 12px 18px; border: 1.5px solid var(--border); background: #FFFFFF;
@@ -85,7 +85,18 @@
       background: var(--accent-orange); color: #FFFFFF; border-color: var(--accent-orange);
     }
 
-    /* שערי המרה מובלעים - ממוקמים לאחר המשלם */
+    /* חלוקת אחוזים בטופס */
+    .shares-box {
+      background: #FAF2E8; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid var(--border); margin-bottom: 14px;
+    }
+    .shares-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 8px;
+    }
+    .share-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .share-item input { padding: 6px 8px; text-align: center; border-radius: 6px; font-weight: 700; }
+
+    /* שערי המרה מובלעים */
     .rates-bar {
       display: flex; gap: 12px; background: #FAF2E8; padding: 10px 14px;
       border-radius: 10px; margin-top: 10px; margin-bottom: 14px; align-items: center; border: 1px solid var(--border);
@@ -125,7 +136,6 @@
       border-radius: 8px; margin-top: 6px; font-weight: 600; color: var(--text);
     }
 
-    .pct-input { width: 60px !important; padding: 4px 6px !important; text-align: center; display: inline-block; }
     .sync-status { font-size: 11px; color: var(--text-muted); }
     .empty-msg { text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px 0; }
     .reset-btn { background: transparent; border: none; color: var(--text-muted); font-size: 11px; text-decoration: underline; cursor: pointer; }
@@ -137,7 +147,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.2.0</div>
+    <div class="version-tag">גרסה 2.3.0</div>
   </div>
 
   <div class="nav-tabs">
@@ -177,13 +187,19 @@
         </div>
       </div>
 
-      <!-- 1. בחירת מי שילם -->
+      <!-- 1. מי שילם -->
       <div class="form-group">
         <label>מי שילם? *</label>
         <div class="payers-grid" id="payersContainer"></div>
       </div>
 
-      <!-- 2. שערי המרה מובלעים (מוצגים כעת לאחר בחירת המשלם) -->
+      <!-- 2. אחוזי חלוקה מותאמים להוצאה זו -->
+      <div class="shares-box">
+        <label style="margin-bottom:0;">חלוקת אחוזים להוצאה זו (%)</label>
+        <div class="shares-grid" id="expenseSharesContainer"></div>
+      </div>
+
+      <!-- 3. שערי המרה -->
       <div class="rates-bar">
         <span style="font-size: 12px; font-weight:700;">שערי המרה פעילים:</span>
         <div class="rate-inline">
@@ -215,6 +231,7 @@
               <th>סכום ב-₪</th>
               <th>משלם</th>
               <th>משפחה</th>
+              <th>חלוקה</th>
               <th>פעולות</th>
             </tr>
           </thead>
@@ -223,11 +240,10 @@
       </div>
     </div>
 
-    <!-- סיכום ואחוזי חלוקה לפי משפחות -->
+    <!-- סיכום לפי משפחות -->
     <div class="summary-card">
-      <div style="font-size:17px; font-weight:700; color:var(--text); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-        <span>סיכום לפי משפחות</span>
-        <button class="reset-btn" onclick="saveFamilyShares()">💾 שמור אחוזי חלוקה</button>
+      <div style="font-size:17px; font-weight:700; color:var(--text); margin-bottom:12px;">
+        <span>סיכום ואיזון חובות</span>
       </div>
 
       <div class="table-container">
@@ -236,7 +252,6 @@
             <tr>
               <th></th>
               <th>משפחה</th>
-              <th>אחוז חלוקה (%)</th>
               <th>שילמה בפועל (₪)</th>
               <th>חלק יחסי (₪)</th>
               <th>מאזן (₪)</th>
@@ -313,11 +328,10 @@
   let activePayerId = '';
   let openAccordionFamilyId = null;
 
-  // משתמשים ומשפחות ברירת מחדל למקרה שהסנכרון ריק
   const DEFAULT_FAMILIES = [
-    { id: 'FAM_1', name: 'בן רחמים', sharePct: 33.3 },
-    { id: 'FAM_2', name: 'לזרובסקי', sharePct: 33.3 },
-    { id: 'FAM_3', name: 'אברך', sharePct: 33.4 }
+    { id: 'FAM_1', name: 'בן רחמים' },
+    { id: 'FAM_2', name: 'לזרובסקי' },
+    { id: 'FAM_3', name: 'אברך' }
   ];
 
   const DEFAULT_USERS = [
@@ -379,35 +393,15 @@
     renderAll();
   }
 
-  function saveFamilyShares() {
-    let totalPct = 0;
-    appData.families.forEach(f => {
-      const input = document.getElementById(`pct_${f.id}`);
-      if (input) {
-        const val = parseFloat(input.value) || 0;
-        f.sharePct = val;
-        totalPct += val;
-      }
-    });
-
-    saveDataToSheet();
-    renderSummary();
-    alert(`אחוזי החלוקה עודכנו! (סה"כ: ${totalPct.toFixed(1)}%)`);
-  }
-
   function renderAll() {
-    // בדיקת גיבוי לרשימת המשתמשים במידה והתרוקנה
-    if (!appData.users || appData.users.length === 0) {
-      appData.users = DEFAULT_USERS;
-    }
-    if (!appData.families || appData.families.length === 0) {
-      appData.families = DEFAULT_FAMILIES;
-    }
+    if (!appData.users || appData.users.length === 0) appData.users = DEFAULT_USERS;
+    if (!appData.families || appData.families.length === 0) appData.families = DEFAULT_FAMILIES;
 
     document.getElementById('rateEUR').value = appData.rates ? (appData.rates.EUR || 4.0) : 4.0;
     document.getElementById('rateUSD').value = appData.rates ? (appData.rates.USD || 3.7) : 3.7;
 
     renderPayers();
+    renderExpenseSharesInputs();
     renderExpenses();
     renderSummary();
     renderAdminLists();
@@ -436,6 +430,25 @@
     });
   }
 
+  function renderExpenseSharesInputs() {
+    const container = document.getElementById('expenseSharesContainer');
+    container.innerHTML = '';
+
+    if (!appData.families || appData.families.length === 0) return;
+
+    const defaultPct = (100 / appData.families.length).toFixed(1);
+
+    appData.families.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'share-item';
+      div.innerHTML = `
+        <span>${f.name}:</span>
+        <input type="number" id="expShare_${f.id}" class="exp-share-input" value="${defaultPct}" step="0.1" min="0" max="100">%
+      `;
+      container.appendChild(div);
+    });
+  }
+
   function saveExpense() {
     const dateVal = document.getElementById('expDate').value;
     const desc = document.getElementById('desc').value.trim();
@@ -447,13 +460,30 @@
       return;
     }
 
+    // איסוף אחוזי חלוקה
+    let shares = {};
+    let totalPct = 0;
+
+    appData.families.forEach(f => {
+      const input = document.getElementById(`expShare_${f.id}`);
+      const val = input ? parseFloat(input.value) || 0 : 0;
+      shares[f.id] = val;
+      totalPct += val;
+    });
+
+    if (Math.abs(totalPct - 100) > 0.5) {
+      alert(`סך האחוזים של המשפחות חייב להסתכם ל-100% (כרגע: ${totalPct.toFixed(1)}%)`);
+      return;
+    }
+
     const exp = {
       id: Date.now(),
       date: dateVal,
       desc: desc,
       amount: amount,
       currency: currency,
-      payerId: activePayerId
+      payerId: activePayerId,
+      shares: shares
     };
 
     if(!appData.expenses) appData.expenses = [];
@@ -479,7 +509,7 @@
     tbody.innerHTML = '';
 
     if (!appData.expenses || appData.expenses.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
       return;
     }
 
@@ -493,6 +523,18 @@
       const user = appData.users.find(u => u.id === exp.payerId) || { firstName: 'לא ידוע', lastName: '', familyId: '' };
       const family = appData.families.find(f => f.id === user.familyId) || { name: 'ללא משפחה' };
 
+      // תצוגת חלוקת אחוזים בקצרה
+      let sharesText = '-';
+      if (exp.shares) {
+        sharesText = Object.keys(exp.shares)
+          .map(fId => {
+            const f = appData.families.find(fam => fam.id === fId);
+            return f ? `${f.name.split(' ')[0]}: ${exp.shares[fId]}%` : '';
+          })
+          .filter(Boolean)
+          .join(', ');
+      }
+
       tr.innerHTML = `
         <td>${exp.date ? exp.date.split('-').reverse().join('/') : '-'}</td>
         <td><strong>${exp.desc}</strong></td>
@@ -500,6 +542,7 @@
         <td><strong>${formatMoney(amountILS)} ₪</strong></td>
         <td>${user.firstName} ${user.lastName}</td>
         <td>${family.name}</td>
+        <td style="font-size:11px; color:var(--text-muted);">${sharesText}</td>
         <td><button class="action-btn delete-btn" onclick="deleteExpense(${exp.id})">✕</button></td>
       `;
       tbody.appendChild(tr);
@@ -517,7 +560,7 @@
     const settlementBox = document.getElementById('settlementList');
 
     if (!appData.families || appData.families.length === 0 || !appData.expenses || appData.expenses.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">אין מספיק נתונים לחישוב</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">אין מספיק נתונים לחישוב</td></tr>';
       totalsBox.innerHTML = 'ממתין להזנת הוצאות...';
       settlementBox.innerHTML = '<div class="empty-msg">אין חובות לאיזון</div>';
       return;
@@ -525,20 +568,25 @@
 
     let totalAll = 0;
     let familyPaid = {};
+    let familyShareTotal = {};
     let familyExpenses = {};
-    
+
     appData.families.forEach(f => {
       familyPaid[f.id] = 0;
+      familyShareTotal[f.id] = 0;
       familyExpenses[f.id] = [];
     });
 
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
+    const defaultPct = 100 / appData.families.length;
 
+    // חישוב מדויק ברמת כל הוצאה
     appData.expenses.forEach(exp => {
       const rate = exp.currency === 'ILS' ? 1 : (appData.rates ? (appData.rates[exp.currency] || 1) : 1);
       const amountILS = exp.amount * rate;
       totalAll += amountILS;
 
+      // מי שילם בפועל
       const user = appData.users.find(u => u.id === exp.payerId);
       if (user && user.familyId && familyPaid[user.familyId] !== undefined) {
         familyPaid[user.familyId] += amountILS;
@@ -548,17 +596,20 @@
           payerName: user.firstName + ' ' + user.lastName
         });
       }
+
+      // חישוב חלק יחסי של כל משפחה בהוצאה זו
+      appData.families.forEach(f => {
+        const pct = (exp.shares && exp.shares[f.id] !== undefined) ? exp.shares[f.id] : defaultPct;
+        familyShareTotal[f.id] += amountILS * (pct / 100);
+      });
     });
 
     let html = '';
     let balances = [];
 
-    const defaultPct = (100 / appData.families.length).toFixed(1);
-
     appData.families.forEach(f => {
-      const pct = f.sharePct !== undefined ? f.sharePct : parseFloat(defaultPct);
-      const shareAmount = totalAll * (pct / 100);
       const paid = familyPaid[f.id] || 0;
+      const shareAmount = familyShareTotal[f.id] || 0;
       const diff = paid - shareAmount;
       const isOpen = (openAccordionFamilyId === f.id);
 
@@ -572,12 +623,9 @@
             </button>
           </td>
           <td><strong>משפחת ${f.name}</strong></td>
-          <td>
-            <input type="number" id="pct_${f.id}" class="pct-input" value="${pct}" step="0.1" min="0" max="100">%
-          </td>
           <td>${formatMoney(paid)} ₪</td>
           <td>${formatMoney(shareAmount)} ₪</td>
-          <td style="color: ${diff >= 0 ? 'green' : 'red'}; font-weight: bold;">
+          <td style="color: ${diff >= -0.5 ? 'green' : 'red'}; font-weight: bold;">
             ${diff >= 0 ? '+' : ''}${formatMoney(diff)} ₪
           </td>
         </tr>
@@ -597,7 +645,7 @@
 
       html += `
         <tr class="details-row ${isOpen ? 'active' : ''}">
-          <td colspan="6" style="padding: 0 10px 10px 10px;">
+          <td colspan="5" style="padding: 0 10px 10px 10px;">
             <table class="inner-table">
               <thead>
                 <tr>
@@ -650,11 +698,8 @@
     const name = document.getElementById('newFamilyName').value.trim();
     if (!name) return alert('נא להזין שם משפחה');
 
-    const newFam = { id: 'FAM_' + Date.now(), name: name, sharePct: 0 };
+    const newFam = { id: 'FAM_' + Date.now(), name: name };
     appData.families.push(newFam);
-    
-    const equalShare = parseFloat((100 / appData.families.length).toFixed(1));
-    appData.families.forEach(f => f.sharePct = equalShare);
 
     saveDataToSheet();
     document.getElementById('newFamilyName').value = '';
