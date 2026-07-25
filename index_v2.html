@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.4.1</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.4.2</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -157,7 +157,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.1</div>
+    <div class="version-tag">גרסה 2.4.2</div>
   </div>
 
   <div class="nav-tabs">
@@ -177,8 +177,17 @@
           <input type="date" id="expDate" required>
         </div>
         <div>
-          <label>תיאור ההוצאה *</label>
-          <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק" required>
+          <label>תיאור ההוצאה (עברית בלבד) *</label>
+          <!-- תיקון HTML: הגבלה לעברית בלבד בזמן אמת -->
+          <input 
+            type="text" 
+            id="desc" 
+            placeholder="לדוגמה: מסעדה, דלק" 
+            pattern="[א-ת\s'&quot;&apos;\-]+" 
+            oninput="this.value = this.value.replace(/[^א-ת\s'&quot;&apos;\-]/g, '')"
+            title="נא להזין אותיות בעברית בלבד"
+            required
+          >
         </div>
       </div>
 
@@ -376,6 +385,7 @@
     document.getElementById('syncStatus').innerText = 'מצב סנכרון: ' + msg;
   }
 
+  // עיגול לתצוגה בלבד
   function formatMoney(num) {
     return Math.round(num || 0).toLocaleString('he-IL');
   }
@@ -467,7 +477,6 @@
   }
 
   function editExpense(id) {
-    // הגנה בסיסמה בעת לחיצה על עריכה
     const pass = prompt("הזן סיסמת מנהל לעריכת הוצאה:");
     if (pass !== ADMIN_PASS) {
       if (pass !== null) alert("סיסמה שגויה!");
@@ -500,7 +509,7 @@
     const currency = document.getElementById('currency').value;
 
     if (!dateVal || !desc || isNaN(amount) || amount <= 0 || !activePayerId) {
-      alert('נא למלא את כל השדות ולבחור משלם');
+      alert('נא למלא את כל השדות בצורה תקינה ולבחור משלם');
       return;
     }
 
@@ -629,6 +638,7 @@
     renderSummary();
   }
 
+  // פונקציית החישוב המעודכנת – חישוב מדויק ברמת השברים/אגורות ועיגול רק בתצוגה
   function renderSummary() {
     const tbody = document.getElementById('summaryTableBody');
     const totalsBox = document.getElementById('summaryTotalsText');
@@ -674,28 +684,10 @@
 
       appData.families.forEach(f => {
         const pct = (exp.shares && exp.shares[f.id] !== undefined) ? exp.shares[f.id] : defaultPct;
+        // חישוב מבוסס שברים מדויק
         familyShareTotal[f.id] += amountILS * (pct / 100);
       });
     });
-
-    // איזון עיגול סכומים כדי להבטיח שסיכום החלקים היחסיים שווה בדיוק ל-TotalAll
-    let roundedShares = {};
-    let sumRoundedShares = 0;
-    
-    appData.families.forEach(f => {
-      const rVal = Math.round(familyShareTotal[f.id] || 0);
-      roundedShares[f.id] = rVal;
-      sumRoundedShares += rVal;
-    });
-
-    const targetTotal = Math.round(totalAll);
-    const diffTotal = targetTotal - sumRoundedShares;
-    
-    if (diffTotal !== 0 && appData.families.length > 0) {
-      // קיזוז ההפרש השקלי הבודד מול המשפחה הראשונה
-      const firstFamId = appData.families[0].id;
-      roundedShares[firstFamId] += diffTotal;
-    }
 
     let html = '';
     let balances = [];
@@ -703,13 +695,16 @@
 
     appData.families.forEach(f => {
       const paid = familyPaid[f.id] || 0;
-      const displayShareAmount = roundedShares[f.id];
       const exactShareAmount = familyShareTotal[f.id] || 0;
+      
+      // מאזן מדויק עד רמת השבר
       const diff = paid - exactShareAmount;
       const isOpen = (openAccordionFamilyId === f.id);
 
       balances.push({ id: f.id, name: f.name, diff: diff });
-      familySharesHtml.push(`<div>• משפחת <strong>${f.name}</strong>: <strong>${formatMoney(displayShareAmount)} ₪</strong></div>`);
+      
+      // עיגול לתצוגה בלבד בלחיצה על האלמנטים
+      familySharesHtml.push(`<div>• משפחת <strong>${f.name}</strong>: <strong>${formatMoney(exactShareAmount)} ₪</strong></div>`);
 
       html += `
         <tr>
@@ -720,8 +715,8 @@
           </td>
           <td><strong>משפחת ${f.name}</strong></td>
           <td>${formatMoney(paid)} ₪</td>
-          <td>${formatMoney(displayShareAmount)} ₪</td>
-          <td style="color: ${diff >= -0.5 ? 'green' : 'red'}; font-weight: bold;">
+          <td>${formatMoney(exactShareAmount)} ₪</td>
+          <td style="color: ${diff >= -0.01 ? 'green' : 'red'}; font-weight: bold;">
             ${diff >= 0 ? '+' : ''}${formatMoney(diff)} ₪
           </td>
         </tr>
@@ -766,8 +761,8 @@
   }
 
   function calculateSettlement(balances, container) {
-    let debtors = balances.filter(b => b.diff < -0.99).map(b => ({ ...b, diff: Math.abs(b.diff) }));
-    let creditors = balances.filter(b => b.diff > 0.99).map(b => ({ ...b }));
+    let debtors = balances.filter(b => b.diff < -0.01).map(b => ({ ...b, diff: Math.abs(b.diff) }));
+    let creditors = balances.filter(b => b.diff > 0.01).map(b => ({ ...b }));
 
     if (debtors.length === 0 && creditors.length === 0) {
       container.innerHTML = '<div class="empty-msg">החשבון מאוזן לחלוטין!</div>';
@@ -860,7 +855,7 @@
   }
 
   function saveDataToSheet() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") return;
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbzPLt2-qGVz6cTMAJpzgH5dksR4xb1ilDc3NBFe9gqFD9ZcL2cg-mk63JhBNMvofmIHug/exec") return;
 
     updateSyncStatus('שומר ב-Google Sheets...');
     fetch(GOOGLE_SCRIPT_URL, {
@@ -874,7 +869,7 @@
   }
 
   function fetchDataFromSheet() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbzPLt2-qGVz6cTMAJpzgH5dksR4xb1ilDc3NBFe9gqFD9ZcL2cg-mk63JhBNMvofmIHug/exec") {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") {
       updateSyncStatus('מצב מקומי בלבד');
       renderAll();
       return;
