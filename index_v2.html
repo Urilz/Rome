@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.4.0</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.4.1</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -96,7 +96,7 @@
     .share-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
     .share-item input { padding: 6px 8px; text-align: center; border-radius: 6px; font-weight: 700; }
 
-    /* שערי המרה מובלעים */
+    /* שערי המרה */
     .rates-bar {
       display: flex; gap: 12px; background: #FAF2E8; padding: 10px 14px;
       border-radius: 10px; margin-top: 10px; margin-bottom: 14px; align-items: center; border: 1px solid var(--border);
@@ -157,7 +157,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.0</div>
+    <div class="version-tag">גרסה 2.4.1</div>
   </div>
 
   <div class="nav-tabs">
@@ -203,7 +203,7 @@
         <div class="payers-grid" id="payersContainer"></div>
       </div>
 
-      <!-- 2. אחוזי חלוקה מותאמים להוצאה זו -->
+      <!-- 2. אחוזי חלוקה -->
       <div class="shares-box">
         <label style="margin-bottom:0;">חלוקת אחוזים להוצאה זו (%)</label>
         <div class="shares-grid" id="expenseSharesContainer"></div>
@@ -275,7 +275,6 @@
       <div class="summary-result-box">
         <div id="summaryTotalsText"></div>
         
-        <!-- השדה החדש המבוקש -->
         <div style="margin-top: 10px; font-weight:700;">סה"כ לתשלום לכל משפחה:</div>
         <div class="family-pay-list" id="familySharesSummaryList"></div>
 
@@ -467,15 +466,34 @@
     });
   }
 
-  function saveExpense() {
-    if (editingExpenseId) {
-      const pass = prompt("הזן סיסמת מנהל לעדכון הוצאה:");
-      if (pass !== ADMIN_PASS) {
-        if (pass !== null) alert("סיסמה שגויה!");
-        return;
-      }
+  function editExpense(id) {
+    // הגנה בסיסמה בעת לחיצה על עריכה
+    const pass = prompt("הזן סיסמת מנהל לעריכת הוצאה:");
+    if (pass !== ADMIN_PASS) {
+      if (pass !== null) alert("סיסמה שגויה!");
+      return;
     }
 
+    const exp = appData.expenses.find(e => e.id === id);
+    if (!exp) return;
+
+    editingExpenseId = id;
+    document.getElementById('formTitle').innerText = 'עריכת הוצאה';
+    document.getElementById('expDate').value = exp.date;
+    document.getElementById('desc').value = exp.desc;
+    document.getElementById('amount').value = exp.amount;
+    document.getElementById('currency').value = exp.currency;
+    activePayerId = exp.payerId;
+
+    document.getElementById('saveExpBtn').innerText = 'עדכן הוצאה';
+    document.getElementById('cancelEditBtn').style.display = 'block';
+
+    renderPayers();
+    renderExpenseSharesInputs(exp.shares);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function saveExpense() {
     const dateVal = document.getElementById('expDate').value;
     const desc = document.getElementById('desc').value.trim();
     const amount = parseFloat(document.getElementById('amount').value);
@@ -504,7 +522,6 @@
     if (!appData.expenses) appData.expenses = [];
 
     if (editingExpenseId) {
-      // עדכון הוצאה קיימת
       const expIndex = appData.expenses.findIndex(e => e.id === editingExpenseId);
       if (expIndex !== -1) {
         appData.expenses[expIndex] = {
@@ -518,7 +535,6 @@
         };
       }
     } else {
-      // הוספת הוצאה חדשה
       const exp = {
         id: Date.now(),
         date: dateVal,
@@ -534,26 +550,6 @@
     saveDataToSheet();
     resetExpenseForm();
     renderAll();
-  }
-
-  function editExpense(id) {
-    const exp = appData.expenses.find(e => e.id === id);
-    if (!exp) return;
-
-    editingExpenseId = id;
-    document.getElementById('formTitle').innerText = 'עריכת הוצאה';
-    document.getElementById('expDate').value = exp.date;
-    document.getElementById('desc').value = exp.desc;
-    document.getElementById('amount').value = exp.amount;
-    document.getElementById('currency').value = exp.currency;
-    activePayerId = exp.payerId;
-
-    document.getElementById('saveExpBtn').innerText = 'עדכן הוצאה';
-    document.getElementById('cancelEditBtn').style.display = 'block';
-
-    renderPayers();
-    renderExpenseSharesInputs(exp.shares);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function resetExpenseForm() {
@@ -682,18 +678,38 @@
       });
     });
 
+    // איזון עיגול סכומים כדי להבטיח שסיכום החלקים היחסיים שווה בדיוק ל-TotalAll
+    let roundedShares = {};
+    let sumRoundedShares = 0;
+    
+    appData.families.forEach(f => {
+      const rVal = Math.round(familyShareTotal[f.id] || 0);
+      roundedShares[f.id] = rVal;
+      sumRoundedShares += rVal;
+    });
+
+    const targetTotal = Math.round(totalAll);
+    const diffTotal = targetTotal - sumRoundedShares;
+    
+    if (diffTotal !== 0 && appData.families.length > 0) {
+      // קיזוז ההפרש השקלי הבודד מול המשפחה הראשונה
+      const firstFamId = appData.families[0].id;
+      roundedShares[firstFamId] += diffTotal;
+    }
+
     let html = '';
     let balances = [];
     let familySharesHtml = [];
 
     appData.families.forEach(f => {
       const paid = familyPaid[f.id] || 0;
-      const shareAmount = familyShareTotal[f.id] || 0;
-      const diff = paid - shareAmount;
+      const displayShareAmount = roundedShares[f.id];
+      const exactShareAmount = familyShareTotal[f.id] || 0;
+      const diff = paid - exactShareAmount;
       const isOpen = (openAccordionFamilyId === f.id);
 
       balances.push({ id: f.id, name: f.name, diff: diff });
-      familySharesHtml.push(`<div>• משפחת <strong>${f.name}</strong>: <strong>${formatMoney(shareAmount)} ₪</strong></div>`);
+      familySharesHtml.push(`<div>• משפחת <strong>${f.name}</strong>: <strong>${formatMoney(displayShareAmount)} ₪</strong></div>`);
 
       html += `
         <tr>
@@ -704,7 +720,7 @@
           </td>
           <td><strong>משפחת ${f.name}</strong></td>
           <td>${formatMoney(paid)} ₪</td>
-          <td>${formatMoney(shareAmount)} ₪</td>
+          <td>${formatMoney(displayShareAmount)} ₪</td>
           <td style="color: ${diff >= -0.5 ? 'green' : 'red'}; font-weight: bold;">
             ${diff >= 0 ? '+' : ''}${formatMoney(diff)} ₪
           </td>
