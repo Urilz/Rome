@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.1.0</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.2.0</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -72,17 +72,9 @@
     input:focus, select:focus { border-color: var(--accent-orange); }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* שערי המרה מובלעים */
-    .rates-bar {
-      display: flex; gap: 12px; background: #FAF2E8; padding: 10px 14px;
-      border-radius: 10px; margin-bottom: 14px; align-items: center; border: 1px solid var(--border);
-    }
-    .rate-inline { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
-    .rate-inline input { width: 75px; padding: 6px 8px; text-align: center; border-radius: 6px; font-weight: 700; }
-
-    /* כפתורי משלמים - עיצוב מותאם */
+    /* כפתורי משלמים - עיצוב תואם למקור */
     .payers-grid {
-      display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start;
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; margin-bottom: 16px;
     }
     .payer-btn {
       padding: 12px 18px; border: 1.5px solid var(--border); background: #FFFFFF;
@@ -92,6 +84,14 @@
     .payer-btn.active {
       background: var(--accent-orange); color: #FFFFFF; border-color: var(--accent-orange);
     }
+
+    /* שערי המרה מובלעים - ממוקמים לאחר המשלם */
+    .rates-bar {
+      display: flex; gap: 12px; background: #FAF2E8; padding: 10px 14px;
+      border-radius: 10px; margin-top: 10px; margin-bottom: 14px; align-items: center; border: 1px solid var(--border);
+    }
+    .rate-inline { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .rate-inline input { width: 75px; padding: 6px 8px; text-align: center; border-radius: 6px; font-weight: 700; }
 
     .submit-btn {
       width: 100%; background: var(--btn-dark); color: #FFFFFF; border: none;
@@ -137,7 +137,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.1.0</div>
+    <div class="version-tag">גרסה 2.2.0</div>
   </div>
 
   <div class="nav-tabs">
@@ -150,19 +150,6 @@
     
     <div class="card">
       <div class="card-title">הוספת הוצאה</div>
-      
-      <!-- שערי המרה מובלעים (ללא שקל) -->
-      <div class="rates-bar">
-        <span style="font-size: 12px; font-weight:700;">שערי המרה פעילים:</span>
-        <div class="rate-inline">
-          <span>€ אירו:</span>
-          <input type="number" id="rateEUR" step="0.01" onchange="saveRates()">
-        </div>
-        <div class="rate-inline">
-          <span>$ דולר:</span>
-          <input type="number" id="rateUSD" step="0.01" onchange="saveRates()">
-        </div>
-      </div>
 
       <div class="grid-2 form-group">
         <div>
@@ -190,9 +177,23 @@
         </div>
       </div>
 
+      <!-- 1. בחירת מי שילם -->
       <div class="form-group">
         <label>מי שילם? *</label>
         <div class="payers-grid" id="payersContainer"></div>
+      </div>
+
+      <!-- 2. שערי המרה מובלעים (מוצגים כעת לאחר בחירת המשלם) -->
+      <div class="rates-bar">
+        <span style="font-size: 12px; font-weight:700;">שערי המרה פעילים:</span>
+        <div class="rate-inline">
+          <span>€ אירו:</span>
+          <input type="number" id="rateEUR" step="0.01" onchange="saveRates()">
+        </div>
+        <div class="rate-inline">
+          <span>$ דולר:</span>
+          <input type="number" id="rateUSD" step="0.01" onchange="saveRates()">
+        </div>
       </div>
 
       <button type="button" class="submit-btn" onclick="saveExpense()">הוסף הוצאה</button>
@@ -312,9 +313,25 @@
   let activePayerId = '';
   let openAccordionFamilyId = null;
 
+  // משתמשים ומשפחות ברירת מחדל למקרה שהסנכרון ריק
+  const DEFAULT_FAMILIES = [
+    { id: 'FAM_1', name: 'בן רחמים', sharePct: 33.3 },
+    { id: 'FAM_2', name: 'לזרובסקי', sharePct: 33.3 },
+    { id: 'FAM_3', name: 'אברך', sharePct: 33.4 }
+  ];
+
+  const DEFAULT_USERS = [
+    { id: 'U_1', firstName: 'אלחנן', lastName: 'בן רחמים', familyId: 'FAM_1' },
+    { id: 'U_2', firstName: 'רוית', lastName: 'בן רחמים', familyId: 'FAM_1' },
+    { id: 'U_3', firstName: 'אורי', lastName: 'לזרובסקי', familyId: 'FAM_2' },
+    { id: 'U_4', firstName: 'אדוה', lastName: 'לזרובסקי', familyId: 'FAM_2' },
+    { id: 'U_5', firstName: 'נורית', lastName: 'אברך', familyId: 'FAM_3' },
+    { id: 'U_6', firstName: 'מייק', lastName: 'אברך', familyId: 'FAM_3' }
+  ];
+
   let appData = {
-    families: [], 
-    users: [],    
+    families: DEFAULT_FAMILIES, 
+    users: DEFAULT_USERS,    
     rates: { EUR: 4.0, USD: 3.7 },
     expenses: []
   };
@@ -379,8 +396,16 @@
   }
 
   function renderAll() {
-    document.getElementById('rateEUR').value = appData.rates.EUR || 4.0;
-    document.getElementById('rateUSD').value = appData.rates.USD || 3.7;
+    // בדיקת גיבוי לרשימת המשתמשים במידה והתרוקנה
+    if (!appData.users || appData.users.length === 0) {
+      appData.users = DEFAULT_USERS;
+    }
+    if (!appData.families || appData.families.length === 0) {
+      appData.families = DEFAULT_FAMILIES;
+    }
+
+    document.getElementById('rateEUR').value = appData.rates ? (appData.rates.EUR || 4.0) : 4.0;
+    document.getElementById('rateUSD').value = appData.rates ? (appData.rates.USD || 3.7) : 3.7;
 
     renderPayers();
     renderExpenses();
@@ -392,16 +417,13 @@
     const container = document.getElementById('payersContainer');
     container.innerHTML = '';
 
-    if (appData.users.length === 0) {
-      container.innerHTML = '<div class="empty-msg">אין משתמשים רשומים. ניתן להוסיף במסך הניהול.</div>';
-      return;
+    const usersList = (appData.users && appData.users.length > 0) ? appData.users : DEFAULT_USERS;
+
+    if (!activePayerId && usersList.length > 0) {
+      activePayerId = usersList[0].id;
     }
 
-    if (!activePayerId && appData.users.length > 0) {
-      activePayerId = appData.users[0].id;
-    }
-
-    appData.users.forEach(u => {
+    usersList.forEach(u => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'payer-btn' + (activePayerId === u.id ? ' active' : '');
@@ -434,6 +456,7 @@
       payerId: activePayerId
     };
 
+    if(!appData.expenses) appData.expenses = [];
     appData.expenses.push(exp);
     saveDataToSheet();
     
@@ -455,7 +478,7 @@
     const tbody = document.getElementById('expensesList');
     tbody.innerHTML = '';
 
-    if (appData.expenses.length === 0) {
+    if (!appData.expenses || appData.expenses.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
       return;
     }
@@ -464,7 +487,7 @@
 
     appData.expenses.slice().reverse().forEach(exp => {
       const tr = document.createElement('tr');
-      const rate = exp.currency === 'ILS' ? 1 : (appData.rates[exp.currency] || 1);
+      const rate = exp.currency === 'ILS' ? 1 : (appData.rates ? (appData.rates[exp.currency] || 1) : 1);
       const amountILS = exp.amount * rate;
       
       const user = appData.users.find(u => u.id === exp.payerId) || { firstName: 'לא ידוע', lastName: '', familyId: '' };
@@ -493,7 +516,7 @@
     const totalsBox = document.getElementById('summaryTotalsText');
     const settlementBox = document.getElementById('settlementList');
 
-    if (appData.families.length === 0 || appData.expenses.length === 0) {
+    if (!appData.families || appData.families.length === 0 || !appData.expenses || appData.expenses.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">אין מספיק נתונים לחישוב</td></tr>';
       totalsBox.innerHTML = 'ממתין להזנת הוצאות...';
       settlementBox.innerHTML = '<div class="empty-msg">אין חובות לאיזון</div>';
@@ -512,7 +535,7 @@
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
 
     appData.expenses.forEach(exp => {
-      const rate = exp.currency === 'ILS' ? 1 : (appData.rates[exp.currency] || 1);
+      const rate = exp.currency === 'ILS' ? 1 : (appData.rates ? (appData.rates[exp.currency] || 1) : 1);
       const amountILS = exp.amount * rate;
       totalAll += amountILS;
 
@@ -668,7 +691,7 @@
 
   function renderAdminLists() {
     const famSelect = document.getElementById('userFamilySelect');
-    if (famSelect) {
+    if (famSelect && appData.families) {
       famSelect.innerHTML = appData.families.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
     }
 
@@ -677,13 +700,13 @@
 
     tbody.innerHTML = '';
 
-    if (appData.users.length === 0) {
+    if (!appData.users || appData.users.length === 0) {
       tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">אין משתמשים במערכת</td></tr>';
       return;
     }
 
     appData.users.forEach(u => {
-      const fam = appData.families.find(f => f.id === u.familyId) || { name: '-' };
+      const fam = appData.families ? appData.families.find(f => f.id === u.familyId) || { name: '-' } : { name: '-' };
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${u.firstName} ${u.lastName}</td>
@@ -697,7 +720,7 @@
   function saveDataToSheet() {
     if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") return;
 
-    updateSyncStatus('שומר ב-Google Sheets (תא A2)...');
+    updateSyncStatus('שומר ב-Google Sheets...');
     fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -711,20 +734,24 @@
   function fetchDataFromSheet() {
     if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec") {
       updateSyncStatus('מצב מקומי בלבד');
+      renderAll();
       return;
     }
 
-    updateSyncStatus('מרענן נתונים מתא A2...');
+    updateSyncStatus('מרענן נתונים...');
     fetch(GOOGLE_SCRIPT_URL, { method: 'GET', redirect: 'follow' })
       .then(res => res.json())
       .then(data => {
-        if (data) {
+        if (data && (data.users || data.families || data.expenses)) {
           appData = data;
-          renderAll();
-          updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')');
         }
+        renderAll();
+        updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')');
       })
-      .catch(() => updateSyncStatus('שגיאת סנכרון מול A2'));
+      .catch(() => {
+        updateSyncStatus('עובד במצב מקומי');
+        renderAll();
+      });
   }
 </script>
 
