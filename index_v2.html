@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול הוצאות דינמי - רומא ודרומה</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+    
+    :root {
+      --bg: #FBF1E4;
+      --card-bg: #FFFFFF;
+      --header-bg: #FAE9D0;
+      --text: #402A1E;
+      --text-muted: #9A7154;
+      --teal: #D9662B;
+      --rust: #EDA24A;
+      --border: #E7C9A3;
+      --font: 'Rubik', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; font-family: var(--font); }
+
+    html, body {
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0; padding: 0;
+      direction: rtl; width: 100%; min-height: 100vh;
+    }
+
+    .container {
+      width: 100%; max-width: 720px;
+      margin: 0 auto; padding: 16px 16px 40px 16px;
+    }
+
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+
+    .version-tag { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+    /* ניווט טאבים */
+    .nav-tabs {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .tab-btn {
+      flex: 1; padding: 12px; border: 1px solid var(--border);
+      background: var(--card-bg); color: var(--text);
+      border-radius: 10px; font-weight: 700; font-size: 14px;
+      cursor: pointer; text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--text); color: var(--bg); border-color: var(--text);
+    }
+
+    /* כרטיסים */
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .card-title {
+      font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 14px;
+      color: var(--text); display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* טפסים */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 15px; background: #FFFDF9; color: var(--text); outline: none;
+    }
+    input:focus, select:focus { border-color: var(--teal); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* כפתורי משלמים דינמיים */
+    .payers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+    .payer-btn {
+      padding: 10px; border: 1px solid var(--border); background: #FFFDF9;
+      border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text);
+      cursor: pointer; text-align: center;
+    }
+    .payer-btn.active { background: var(--teal); color: white; border-color: var(--teal); }
+
+    .submit-btn {
+      width: 100%; background: var(--text); color: var(--bg); border: none;
+      padding: 14px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px;
+    }
+
+    /* טבלאות */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; }
+    th { background-color: var(--header-bg); color: var(--text); padding: 10px 8px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+
+    .action-btn { background: none; border: none; font-size: 14px; cursor: pointer; padding: 2px 4px; }
+    .delete-btn { color: #cc0000; }
+
+    .summary-card { background: var(--header-bg); border-radius: 14px; padding: 20px; }
+    .summary-result-box {
+      background: #FFFFFF; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px; margin-top: 16px; font-size: 13px; line-height: 1.6;
+    }
+
+    .sync-status { font-size: 11px; color: var(--text-muted); }
+    .empty-msg { text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px 0; }
+    .reset-btn { background: transparent; border: none; color: var(--text-muted); font-size: 11px; text-decoration: underline; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="top-bar">
+    <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
+    <div class="version-tag">גרסה 2.0.0 (דינמי)</div>
+  </div>
+
+  <!-- טאבים לניווט -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="tabExpensesBtn" onclick="switchTab('expenses')">הוצאות וסיכומים</button>
+    <button class="tab-btn" id="tabAdminBtn" onclick="switchTab('admin')">⚙️ ניהול משתמשים</button>
+  </div>
+
+  <!-- ==================== מסך 1: הוצאות וסיכומים ==================== -->
+  <div id="viewExpenses">
+    
+    <!-- טופס דיווח הוצאה -->
+    <div class="card">
+      <div class="card-title">הוספת הוצאה</div>
+      
+      <div class="grid-2 form-group">
+        <div>
+          <label>תאריך *</label>
+          <input type="date" id="expDate" required>
+        </div>
+        <div>
+          <label>תיאור ההוצאה *</label>
+          <input type="text" id="desc" placeholder="לדוגמה: מסעדה, דלק" required>
+        </div>
+      </div>
+
+      <div class="grid-2 form-group">
+        <div>
+          <label>סכום *</label>
+          <input type="number" id="amount" step="any" placeholder="0" inputmode="decimal" required>
+        </div>
+        <div>
+          <label>מטבע *</label>
+          <select id="currency" required>
+            <option value="ILS">₪ (שקל)</option>
+            <option value="EUR">€ (אירו)</option>
+            <option value="USD">$ (דולר)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>מי שילם? *</label>
+        <div class="payers-grid" id="payersContainer"></div>
+      </div>
+
+      <button type="button" class="submit-btn" onclick="saveExpense()">הוסף הוצאה</button>
+    </div>
+
+    <!-- טבלת הוצאות -->
+    <div class="card">
+      <div class="card-title">
+        <span>הוצאות ששולמו</span>
+        <button class="reset-btn" onclick="fetchDataFromSheet()">🔄 רענן נתונים</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>תאריך</th>
+              <th>תיאור</th>
+              <th>סכום במקור</th>
+              <th>סכום ב-₪</th>
+              <th>משלם</th>
+              <th>משפחה</th>
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="expensesList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- סיכום דינמי לפי משפחות -->
+    <div class="summary-card">
+      <div style="font-size:16px; font-weight:700; color:var(--text); margin-bottom:12px;">סיכום לפי משפחות</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>משפחה</th>
+              <th>שילמה בפועל (₪)</th>
+              <th>חלק שווה בהוצאה (₪)</th>
+              <th>מאזן / הפרש (₪)</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody"></tbody>
+        </table>
+      </div>
+      <div class="summary-result-box" id="summaryFinalText"></div>
+    </div>
+
+  </div>
+
+  <!-- ==================== מסך 2: ניהול משתמשים ומשפחות ==================== -->
+  <div id="viewAdmin" style="display: none;">
+    
+    <!-- הוספת משפחה -->
+    <div class="card">
+      <div class="card-title">הוספת משפחה חדשה</div>
+      <div class="form-group">
+        <label>שם המשפחה</label>
+        <input type="text" id="newFamilyName" placeholder="לדוגמה: ישראלי">
+      </div>
+      <button class="submit-btn" onclick="addFamily()">הוסף משפחה</button>
+    </div>
+
+    <!-- הוספת משתמש -->
+    <div class="card">
+      <div class="card-title">הוספת משתמש חדש</div>
+      <div class="grid-2 form-group">
+        <div>
+          <label>שם פרטי</label>
+          <input type="text" id="newUserFirstName" placeholder="שם פרטי">
+        </div>
+        <div>
+          <label>שם משפחה</label>
+          <input type="text" id="newUserLastName" placeholder="שם משפחה">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>שיוך למשפחה</label>
+        <select id="userFamilySelect"></select>
+      </div>
+      <button class="submit-btn" onclick="addUser()">הוסף משתמש</button>
+    </div>
+
+    <!-- רשימת משתמשים ומשפחות קיימים -->
+    <div class="card">
+      <div class="card-title">רשימת משתמשים רשומים</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>שם מלא</th>
+              <th>משפחה</th>
+              <th>פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="usersAdminList"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // נא להחליף ב-URL המעודכן מ-Google Apps Script
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
+  
+  const ADMIN_PASS = "7350";
+
+  let isAdminUnlocked = false;
+  let activePayerId = '';
+
+  // מבנה הנתונים הדינמי
+  let appData = {
+    families: [],
+    users: [],
+    rates: { ILS: 1, EUR: 4.0, USD: 3.7 },
+    expenses: []
+  };
+
+  window.onload = function() {
+    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+    fetchDataFromSheet();
+    setInterval(fetchDataFromSheet, 10000);
+  };
+
+  function updateSyncStatus(msg) {
+    document.getElementById('syncStatus').innerText = 'מצב סנכרון: ' + msg;
+  }
+
+  function formatMoney(num) {
+    return Math.round(num || 0).toLocaleString('he-IL');
+  }
+
+  function switchTab(tab) {
+    if (tab === 'admin' && !isAdminUnlocked) {
+      const pass = prompt("הזן סיסמת מנהל לגישה להגדרות:");
+      if (pass === ADMIN_PASS) {
+        isAdminUnlocked = true;
+      } else {
+        if(pass !== null) alert("סיסמה שגויה!");
+        return;
+      }
+    }
+
+    document.getElementById('viewExpenses').style.display = tab === 'expenses' ? 'block' : 'none';
+    document.getElementById('viewAdmin').style.display = tab === 'admin' ? 'block' : 'none';
+    
+    document.getElementById('tabExpensesBtn').className = 'tab-btn' + (tab === 'expenses' ? ' active' : '');
+    document.getElementById('tabAdminBtn').className = 'tab-btn' + (tab === 'admin' ? ' active' : '');
+  }
+
+  // === רנדור הממשק הדינמי ===
+  function renderAll() {
+    renderPayers();
+    renderExpenses();
+    renderSummary();
+    renderAdminLists();
+  }
+
+  function renderPayers() {
+    const container = document.getElementById('payersContainer');
+    container.innerHTML = '';
+
+    if (appData.users.length === 0) {
+      container.innerHTML = '<div class="empty-msg">אין משתמשים רשומים. צור משתמשים במסך הניהול.</div>';
+      return;
+    }
+
+    if (!activePayerId && appData.users.length > 0) {
+      activePayerId = appData.users[0].id;
+    }
+
+    appData.users.forEach(u => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'payer-btn' + (activePayerId === u.id ? ' active' : '');
+      btn.innerText = `${u.firstName} ${u.lastName}`;
+      btn.onclick = function() {
+        activePayerId = u.id;
+        renderPayers();
+      };
+      container.appendChild(btn);
+    });
+  }
+
+  function saveExpense() {
+    const dateVal = document.getElementById('expDate').value;
+    const desc = document.getElementById('desc').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const currency = document.getElementById('currency').value;
+
+    if (!dateVal || !desc || isNaN(amount) || amount <= 0 || !activePayerId) {
+      alert('נא למלא את כל השדות ולבחור משלם');
+      return;
+    }
+
+    const exp = {
+      id: Date.now(),
+      date: dateVal,
+      desc: desc,
+      amount: amount,
+      currency: currency,
+      payerId: activePayerId
+    };
+
+    appData.expenses.push(exp);
+    saveDataToSheet();
+    
+    document.getElementById('desc').value = '';
+    document.getElementById('amount').value = '';
+    renderAll();
+  }
+
+  function deleteExpense(id) {
+    const pass = prompt("הזן סיסמת מנהל למחיקת הוצאה:");
+    if (pass !== ADMIN_PASS) return;
+
+    appData.expenses = appData.expenses.filter(e => e.id !== id);
+    saveDataToSheet();
+    renderAll();
+  }
+
+  function renderExpenses() {
+    const tbody = document.getElementById('expensesList');
+    tbody.innerHTML = '';
+
+    if (appData.expenses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">טרם נרשמו הוצאות</td></tr>';
+      return;
+    }
+
+    const symbols = { ILS: '₪', EUR: '€', USD: '$' };
+
+    appData.expenses.slice().reverse().forEach(exp => {
+      const tr = document.createElement('tr');
+      const rate = appData.rates[exp.currency] || 1;
+      const amountILS = exp.amount * rate;
+      
+      const user = appData.users.find(u => u.id === exp.payerId) || { firstName: 'לא ידוע', lastName: '', familyId: '' };
+      const family = appData.families.find(f => f.id === user.familyId) || { name: 'ללא משפחה' };
+
+      tr.innerHTML = `
+        <td>${exp.date ? exp.date.split('-').reverse().join('/') : '-'}</td>
+        <td><strong>${exp.desc}</strong></td>
+        <td>${formatMoney(exp.amount)} ${symbols[exp.currency]}</td>
+        <td><strong>${formatMoney(amountILS)} ₪</strong></td>
+        <td>${user.firstName} ${user.lastName}</td>
+        <td>${family.name}</td>
+        <td><button class="action-btn delete-btn" onclick="deleteExpense(${exp.id})">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // === חישוב דינמי לפי משפחות ===
+  function renderSummary() {
+    const tbody = document.getElementById('summaryTableBody');
+    const finalBox = document.getElementById('summaryFinalText');
+
+    if (appData.families.length === 0 || appData.expenses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">אין מספיק נתונים לחישוב</td></tr>';
+      finalBox.innerHTML = 'ממתין להזנת הוצאות...';
+      return;
+    }
+
+    let totalAll = 0;
+    let familyPaid = {};
+    appData.families.forEach(f => familyPaid[f.id] = 0);
+
+    // חישוב סה"כ שילמה כל משפחה
+    appData.expenses.forEach(exp => {
+      const rate = appData.rates[exp.currency] || 1;
+      const amountILS = exp.amount * rate;
+      totalAll += amountILS;
+
+      const user = appData.users.find(u => u.id === exp.payerId);
+      if (user && user.familyId && familyPaid[user.familyId] !== undefined) {
+        familyPaid[user.familyId] += amountILS;
+      }
+    });
+
+    // חלוקה שווה בין כל המשפחות הרשומות במערכת
+    const numFamilies = appData.families.length;
+    const sharePerFamily = totalAll / numFamilies;
+
+    let html = '';
+    appData.families.forEach(f => {
+      const paid = familyPaid[f.id] || 0;
+      const diff = paid - sharePerFamily;
+
+      html += `
+        <tr>
+          <td><strong>משפחת ${f.name}</strong></td>
+          <td>${formatMoney(paid)} ₪</td>
+          <td>${formatMoney(sharePerFamily)} ₪</td>
+          <td style="color: ${diff >= 0 ? 'green' : 'red'}; font-weight: bold;">
+            ${diff >= 0 ? '+' : ''}${formatMoney(diff)} ₪
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+    finalBox.innerHTML = `<strong>סה"כ הוצאות כולל בטיול: ${formatMoney(totalAll)} ₪</strong> (חלוקה שווה של ${formatMoney(sharePerFamily)} ₪ למשפחה).`;
+  }
+
+  // === ניהול משתמשים ומשפחות (Admin) ===
+  function addFamily() {
+    const name = document.getElementById('newFamilyName').value.trim();
+    if (!name) return alert('נא להזין שם משפחה');
+
+    const newFam = { id: 'FAM_' + Date.now(), name: name };
+    appData.families.push(newFam);
+    saveDataToSheet();
+    document.getElementById('newFamilyName').value = '';
+    renderAll();
+  }
+
+  function addUser() {
+    const firstName = document.getElementById('newUserFirstName').value.trim();
+    const lastName = document.getElementById('newUserLastName').value.trim();
+    const familyId = document.getElementById('userFamilySelect').value;
+
+    if (!firstName || !lastName || !familyId) return alert('נא למלא את כל שדות המשתמש');
+
+    const newUser = {
+      id: 'U_' + Date.now(),
+      firstName: firstName,
+      lastName: lastName,
+      familyId: familyId
+    };
+
+    appData.users.push(newUser);
+    saveDataToSheet();
+    document.getElementById('newUserFirstName').value = '';
+    document.getElementById('newUserLastName').value = '';
+    renderAll();
+  }
+
+  function deleteUser(id) {
+    if(!confirm('האם למחוק משתמש זה?')) return;
+    appData.users = appData.users.filter(u => u.id !== id);
+    saveDataToSheet();
+    renderAll();
+  }
+
+  function renderAdminLists() {
+    // עדכון תפריט המשפחות בטופס הוספת משתמש
+    const famSelect = document.getElementById('userFamilySelect');
+    famSelect.innerHTML = appData.families.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+
+    // טבלת המשתמשים בניהול
+    const tbody = document.getElementById('usersAdminList');
+    tbody.innerHTML = '';
+
+    if (appData.users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">אין משתמשים במערכת</td></tr>';
+      return;
+    }
+
+    appData.users.forEach(u => {
+      const fam = appData.families.find(f => f.id === u.familyId) || { name: '-' };
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${u.firstName} ${u.lastName}</td>
+        <td>משפחת ${fam.name}</td>
+        <td><button class="action-btn delete-btn" onclick="deleteUser('${u.id}')">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // === תקשורת מול Google Apps Script ===
+  function saveDataToSheet() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") return;
+
+    updateSyncStatus('שומר ב-Google Sheets (תא A2)...');
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(appData)
+    })
+    .then(() => updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')'))
+    .catch(() => updateSyncStatus('שגיאה בשמירה מרחוק'));
+  }
+
+  function fetchDataFromSheet() {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") {
+      updateSyncStatus('מצב מקומי בלבד');
+      return;
+    }
+
+    updateSyncStatus('מרענן נתונים מתא A2...');
+    fetch(GOOGLE_SCRIPT_URL, { method: 'GET', redirect: 'follow' })
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          appData = data;
+          renderAll();
+          updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')');
+        }
+      })
+      .catch(e => updateSyncStatus('שגיאת סנכרון מול A2'));
+  }
+</script>
+
+</body>
+</html>
