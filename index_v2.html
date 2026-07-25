@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות דינמי - רומא ודרומה</title>
+  <title>ניהול הוצאות דינמי - גרסה 2.0.0</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -65,7 +65,7 @@
       color: var(--text); display: flex; justify-content: space-between; align-items: center;
     }
 
-    /* טפסים */
+    /* טפסים ושדות */
     .form-group { margin-bottom: 12px; }
     label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
     input[type="text"], input[type="number"], input[type="date"], select {
@@ -74,6 +74,12 @@
     }
     input:focus, select:focus { border-color: var(--teal); }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* שערי המרה */
+    .rates-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .rate-box { background: #FFFDF9; border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; }
+    .rate-box label { font-size: 11px; margin-bottom: 2px; }
+    .rate-box input { text-align: center; font-weight: bold; padding: 6px; }
 
     /* כפתורי משלמים דינמיים */
     .payers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
@@ -97,11 +103,24 @@
 
     .action-btn { background: none; border: none; font-size: 14px; cursor: pointer; padding: 2px 4px; }
     .delete-btn { color: #cc0000; }
+    .expand-btn { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--teal); font-weight: bold; padding: 0 4px; }
+
+    /* פירוט נפתח (Accordion) */
+    .details-row { display: none; background-color: #FFFDF9; }
+    .details-row.active { display: table-row; }
+    .inner-table { width: 100%; margin: 8px 0; background: #FFFFFF; border: 1px solid var(--border); border-radius: 6px; }
+    .inner-table th { background-color: #F7E5CF; font-size: 11px; }
+    .inner-table td { font-size: 12px; }
 
     .summary-card { background: var(--header-bg); border-radius: 14px; padding: 20px; }
     .summary-result-box {
       background: #FFFFFF; border: 1.5px solid var(--border); border-radius: 10px;
-      padding: 12px; margin-top: 16px; font-size: 13px; line-height: 1.6;
+      padding: 14px; margin-top: 16px; font-size: 14px; line-height: 1.6;
+    }
+
+    .settlement-item {
+      padding: 8px 12px; background: #FFFDF9; border: 1px solid var(--border);
+      border-radius: 8px; margin-top: 6px; font-weight: 600; color: var(--text);
     }
 
     .sync-status { font-size: 11px; color: var(--text-muted); }
@@ -127,6 +146,28 @@
   <!-- ==================== מסך 1: הוצאות וסיכומים ==================== -->
   <div id="viewExpenses">
     
+    <!-- שערי המרה -->
+    <div class="card">
+      <div class="card-title">
+        <span>שערי המרה ל-₪</span>
+        <button class="reset-btn" onclick="saveRates()">💾 שמור שערים</button>
+      </div>
+      <div class="rates-grid">
+        <div class="rate-box">
+          <label>₪ שקל</label>
+          <input type="number" id="rateILS" value="1" disabled>
+        </div>
+        <div class="rate-box">
+          <label>€ אירו</label>
+          <input type="number" id="rateEUR" step="0.01">
+        </div>
+        <div class="rate-box">
+          <label>$ דולר</label>
+          <input type="number" id="rateUSD" step="0.01">
+        </div>
+      </div>
+    </div>
+
     <!-- טופס דיווח הוצאה -->
     <div class="card">
       <div class="card-title">הוספת הוצאה</div>
@@ -165,10 +206,10 @@
       <button type="button" class="submit-btn" onclick="saveExpense()">הוסף הוצאה</button>
     </div>
 
-    <!-- טבלת הוצאות -->
+    <!-- טבלת הוצאות כללית -->
     <div class="card">
       <div class="card-title">
-        <span>הוצאות ששולמו</span>
+        <span>יומן הוצאות כללי</span>
         <button class="reset-btn" onclick="fetchDataFromSheet()">🔄 רענן נתונים</button>
       </div>
       <div class="table-container">
@@ -189,23 +230,30 @@
       </div>
     </div>
 
-    <!-- סיכום דינמי לפי משפחות -->
+    <!-- סיכום דינמי לפי משפחות + פירוט נפתח + סליקה -->
     <div class="summary-card">
       <div style="font-size:16px; font-weight:700; color:var(--text); margin-bottom:12px;">סיכום לפי משפחות</div>
       <div class="table-container">
         <table>
           <thead>
             <tr>
+              <th></th>
               <th>משפחה</th>
               <th>שילמה בפועל (₪)</th>
-              <th>חלק שווה בהוצאה (₪)</th>
+              <th>חלק שווה (₪)</th>
               <th>מאזן / הפרש (₪)</th>
             </tr>
           </thead>
           <tbody id="summaryTableBody"></tbody>
         </table>
       </div>
-      <div class="summary-result-box" id="summaryFinalText"></div>
+
+      <div class="summary-result-box">
+        <div id="summaryTotalsText"></div>
+        <hr style="border:0; border-top:1px solid var(--border); margin:10px 0;">
+        <div style="font-weight:700; margin-bottom:6px;">תשלומי איזון (מי חייב למי):</div>
+        <div id="settlementList"></div>
+      </div>
     </div>
 
   </div>
@@ -265,15 +313,13 @@
 </div>
 
 <script>
-  // נא להחליף ב-URL המעודכן מ-Google Apps Script
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec";
-  
+  const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL";
   const ADMIN_PASS = "7350";
 
   let isAdminUnlocked = false;
   let activePayerId = '';
+  let openAccordionFamilyId = null;
 
-  // מבנה הנתונים הדינמי
   let appData = {
     families: [],
     users: [],
@@ -313,8 +359,31 @@
     document.getElementById('tabAdminBtn').className = 'tab-btn' + (tab === 'admin' ? ' active' : '');
   }
 
-  // === רנדור הממשק הדינמי ===
+  // === עריכת שערי המרה ===
+  function updateRatesInputs() {
+    document.getElementById('rateEUR').value = appData.rates.EUR || 4.0;
+    document.getElementById('rateUSD').value = appData.rates.USD || 3.7;
+  }
+
+  function saveRates() {
+    const eur = parseFloat(document.getElementById('rateEUR').value);
+    const usd = parseFloat(document.getElementById('rateUSD').value);
+
+    if (isNaN(eur) || isNaN(usd) || eur <= 0 || usd <= 0) {
+      alert("נא להזין שערי המרה תקינים");
+      return;
+    }
+
+    appData.rates.EUR = eur;
+    appData.rates.USD = usd;
+    saveDataToSheet();
+    renderAll();
+    alert("השערים עודכנו בהצלחה!");
+  }
+
+  // === רנדור הממשק ===
   function renderAll() {
+    updateRatesInputs();
     renderPayers();
     renderExpenses();
     renderSummary();
@@ -416,22 +485,36 @@
     });
   }
 
-  // === חישוב דינמי לפי משפחות ===
+  function toggleAccordion(famId) {
+    openAccordionFamilyId = (openAccordionFamilyId === famId) ? null : famId;
+    renderSummary();
+  }
+
+  // === חישוב דינמי + פירוט + מנגנון "מי חייב למי" ===
   function renderSummary() {
     const tbody = document.getElementById('summaryTableBody');
-    const finalBox = document.getElementById('summaryFinalText');
+    const totalsBox = document.getElementById('summaryTotalsText');
+    const settlementBox = document.getElementById('settlementList');
 
     if (appData.families.length === 0 || appData.expenses.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">אין מספיק נתונים לחישוב</td></tr>';
-      finalBox.innerHTML = 'ממתין להזנת הוצאות...';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">אין מספיק נתונים לחישוב</td></tr>';
+      totalsBox.innerHTML = 'ממתין להזנת הוצאות...';
+      settlementBox.innerHTML = '<div class="empty-msg">אין חובות לאיזון</div>';
       return;
     }
 
     let totalAll = 0;
     let familyPaid = {};
-    appData.families.forEach(f => familyPaid[f.id] = 0);
+    let familyExpenses = {}; // שומר את רשימת ההוצאות של כל משפחה
+    
+    appData.families.forEach(f => {
+      familyPaid[f.id] = 0;
+      familyExpenses[f.id] = [];
+    });
 
-    // חישוב סה"כ שילמה כל משפחה
+    const symbols = { ILS: '₪', EUR: '€', USD: '$' };
+
+    // חיזוק שיוך הוצאות למשפחות
     appData.expenses.forEach(exp => {
       const rate = appData.rates[exp.currency] || 1;
       const amountILS = exp.amount * rate;
@@ -440,20 +523,39 @@
       const user = appData.users.find(u => u.id === exp.payerId);
       if (user && user.familyId && familyPaid[user.familyId] !== undefined) {
         familyPaid[user.familyId] += amountILS;
+        familyExpenses[user.familyId].push({
+          ...exp,
+          amountILS: amountILS,
+          payerName: user.firstName + ' ' + user.lastName
+        });
       }
     });
 
-    // חלוקה שווה בין כל המשפחות הרשומות במערכת
     const numFamilies = appData.families.length;
     const sharePerFamily = totalAll / numFamilies;
 
     let html = '';
+    let balances = []; // עבור מנגנון הסליקה
+
     appData.families.forEach(f => {
       const paid = familyPaid[f.id] || 0;
       const diff = paid - sharePerFamily;
+      const isOpen = (openAccordionFamilyId === f.id);
 
+      balances.push({
+        id: f.id,
+        name: f.name,
+        diff: diff
+      });
+
+      // שורת סיכום משפחתית
       html += `
         <tr>
+          <td>
+            <button class="expand-btn" onclick="toggleAccordion('${f.id}')">
+              ${isOpen ? '➖' : '➕'}
+            </button>
+          </td>
           <td><strong>משפחת ${f.name}</strong></td>
           <td>${formatMoney(paid)} ₪</td>
           <td>${formatMoney(sharePerFamily)} ₪</td>
@@ -462,10 +564,78 @@
           </td>
         </tr>
       `;
+
+      // שורת פירוט מורחבת (Accordion)
+      const list = familyExpenses[f.id] || [];
+      let innerRowsHtml = '';
+
+      if (list.length === 0) {
+        innerRowsHtml = '<tr><td colspan="5" class="empty-msg">משפחה זו לא רשמה הוצאות</td></tr>';
+      } else {
+        list.forEach(item => {
+          innerRowsHtml += `
+            <tr>
+              <td>${item.date ? item.date.split('-').reverse().join('/') : '-'}</td>
+              <td>${item.desc} (${item.payerName})</td>
+              <td>${formatMoney(item.amount)} ${symbols[item.currency]}</td>
+              <td><strong>${formatMoney(item.amountILS)} ₪</strong></td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `
+        <tr class="details-row ${isOpen ? 'active' : ''}">
+          <td colspan="5" style="padding: 0 10px 10px 10px;">
+            <table class="inner-table">
+              <thead>
+                <tr>
+                  <th>תאריך</th>
+                  <th>סעיף ומשלם</th>
+                  <th>סכום במקור</th>
+                  <th>משוערך לש"ח</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${innerRowsHtml}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      `;
     });
 
     tbody.innerHTML = html;
-    finalBox.innerHTML = `<strong>סה"כ הוצאות כולל בטיול: ${formatMoney(totalAll)} ₪</strong> (חלוקה שווה של ${formatMoney(sharePerFamily)} ₪ למשפחה).`;
+    totalsBox.innerHTML = `<strong>סה"כ הוצאות כולל: ${formatMoney(totalAll)} ₪</strong> (חלוקה שווה: ${formatMoney(sharePerFamily)} ₪ למשפחה).`;
+
+    // === חישוב מנגנון הסליקה (מי חייב למי) ===
+    calculateSettlement(balances, settlementBox);
+  }
+
+  function calculateSettlement(balances, container) {
+    let debtors = balances.filter(b => b.diff < -0.99).map(b => ({ ...b, diff: Math.abs(b.diff) }));
+    let creditors = balances.filter(b => b.diff > 0.99).map(b => ({ ...b }));
+
+    if (debtors.length === 0 && creditors.length === 0) {
+      container.innerHTML = '<div class="empty-msg">החשבון מאוזן לחלוטין! אף משפחה לא חייבת.</div>';
+      return;
+    }
+
+    let settlements = [];
+
+    debtors.forEach(d => {
+      creditors.forEach(c => {
+        if (d.diff <= 0.01 || c.diff <= 0.01) return;
+
+        let amountToPay = Math.min(d.diff, c.diff);
+        settlements.push(`משפחת <strong>${d.name}</strong> מעבירה למשפחת <strong>${c.name}</strong>: <strong>${formatMoney(amountToPay)} ₪</strong>`);
+
+        d.diff -= amountToPay;
+        c.diff -= amountToPay;
+      });
+    });
+
+    container.innerHTML = settlements.map(s => `<div class="settlement-item">📌 ${s}</div>`).join('');
   }
 
   // === ניהול משתמשים ומשפחות (Admin) ===
@@ -509,11 +679,9 @@
   }
 
   function renderAdminLists() {
-    // עדכון תפריט המשפחות בטופס הוספת משתמש
     const famSelect = document.getElementById('userFamilySelect');
     famSelect.innerHTML = appData.families.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
 
-    // טבלת המשתמשים בניהול
     const tbody = document.getElementById('usersAdminList');
     tbody.innerHTML = '';
 
@@ -536,7 +704,7 @@
 
   // === תקשורת מול Google Apps Script ===
   function saveDataToSheet() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") return;
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbwfP1YG9QiD1vGSyLufmrI3r9ZS-IL0dKU9dge6Xo645sn59t7Jr4JmrLLxQNuYK6fxPQ/exec") return;
 
     updateSyncStatus('שומר ב-Google Sheets (תא A2)...');
     fetch(GOOGLE_SCRIPT_URL, {
