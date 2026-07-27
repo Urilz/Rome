@@ -345,7 +345,7 @@
 </div>
 
 <script>
-  const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL";
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPLt2-qGVz6cTMAJpzgH5dksR4xb1ilDc3NBFe9gqFD9ZcL2cg-mk63JhBNMvofmIHug/exec";
   const ADMIN_PASS = "7350";
 
   let isAdminUnlocked = false;
@@ -853,43 +853,44 @@
       tbody.appendChild(tr);
     });
   }
-
+  
   function saveDataToSheet() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbzPLt2-qGVz6cTMAJpzgH5dksR4xb1ilDc3NBFe9gqFD9ZcL2cg-mk63JhBNMvofmIHug/exec") return;
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") return;
 
-    updateSyncStatus('שומר ב-Google Sheets...');
-    fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(appData)
-    })
-    .then(() => updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')'))
-    .catch(() => updateSyncStatus('שגיאה בשמירה מרחוק'));
+  updateSyncStatus('שומר ב-Google Sheets...');
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(appData)
+  })
+  .then(() => updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')'))
+  .catch(() => updateSyncStatus('שגיאה בשמירה מרחוק'));
+}
+  
+  
+ function fetchDataFromSheet() {
+  if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL") {
+    updateSyncStatus('מצב מקומי בלבד');
+    renderAll();
+    return;
   }
 
-  function fetchDataFromSheet() {
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbzPLt2-qGVz6cTMAJpzgH5dksR4xb1ilDc3NBFe9gqFD9ZcL2cg-mk63JhBNMvofmIHug/exec") {
-      updateSyncStatus('מצב מקומי בלבד');
+  updateSyncStatus('מרענן נתונים...');
+  fetch(GOOGLE_SCRIPT_URL, { method: 'GET', redirect: 'follow' })
+    .then(res => res.json())
+    .then(data => {
+      if (data && (data.users || data.families || data.expenses)) {
+        appData = data;
+      }
       renderAll();
-      return;
-    }
-
-    updateSyncStatus('מרענן נתונים...');
-    fetch(GOOGLE_SCRIPT_URL, { method: 'GET', redirect: 'follow' })
-      .then(res => res.json())
-      .then(data => {
-        if (data && (data.users || data.families || data.expenses)) {
-          appData = data;
-        }
-        renderAll();
-        updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')');
-      })
-      .catch(() => {
-        updateSyncStatus('עובד במצב מקומי');
-        renderAll();
-      });
-  }
+      updateSyncStatus('מעודכן (' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) + ')');
+    })
+    .catch(() => {
+      updateSyncStatus('עובד במצב מקומי');
+      renderAll();
+    });
+}
 </script>
 
 </body>
