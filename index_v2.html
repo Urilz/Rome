@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.4.3</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.4.4</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -157,7 +157,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.3</div>
+    <div class="version-tag">גרסה 2.4.4</div>
   </div>
 
   <div class="nav-tabs">
@@ -460,15 +460,29 @@
 
     if (!appData.families || appData.families.length === 0) return;
 
-    const defaultPct = (100 / appData.families.length).toFixed(1);
+    const count = appData.families.length;
+    
+    // חישוב חלוקה מדויקת מאחורי הקלעים
+    let baseShare = 100 / count;
 
-    appData.families.forEach(f => {
+    appData.families.forEach((f, idx) => {
       const div = document.createElement('div');
       div.className = 'share-item';
-      const val = (overrideShares && overrideShares[f.id] !== undefined) ? overrideShares[f.id] : defaultPct;
+
+      let valInternal;
+      if (overrideShares && overrideShares[f.id] !== undefined) {
+        valInternal = parseFloat(overrideShares[f.id]) || 0;
+      } else {
+        // ברירת מחדל: אם 3 משפחות, מקבלים 33.333333... ולמשפחה האחרונה מתווסף ההפרש ל-100%
+        valInternal = (idx === count - 1) ? (100 - baseShare * (count - 1)) : baseShare;
+      }
+
+      // בתצוגה נציג מעוגל לספרה אחת אחרי הנקודה (33.3)
+      const displayVal = valInternal.toFixed(1);
+
       div.innerHTML = `
         <span>${f.name}:</span>
-        <input type="number" id="expShare_${f.id}" class="exp-share-input" value="${val}" step="0.1" min="0" max="100">%
+        <input type="number" id="expShare_${f.id}" class="exp-share-input" data-internal-val="${valInternal}" value="${displayVal}" step="0.1" min="0" max="100">%
       `;
       container.appendChild(div);
     });
@@ -519,18 +533,37 @@
 
     let shares = {};
     let totalPct = 0;
+    let inputsData = [];
 
-    appData.families.forEach(f => {
+    appData.families.forEach((f, idx) => {
       const input = document.getElementById(`expShare_${f.id}`);
-      const val = input ? parseFloat(input.value) || 0 : 0;
-      shares[f.id] = val;
+      let val = input ? parseFloat(input.value) || 0 : 0;
+      
+      // אם ערך הקלט שווה לתצוגה המעוגלת של הערך הפנימי - נשתמש בערך המדויק
+      const internalVal = input ? parseFloat(input.getAttribute('data-internal-val')) : null;
+      if (internalVal !== null && !isNaN(internalVal) && val.toFixed(1) === internalVal.toFixed(1)) {
+        val = internalVal;
+      }
+
+      inputsData.push({ id: f.id, val: val });
       totalPct += val;
     });
+
+    // במידה והסכום קרוב מאוד ל-100% (עקב עיגול תצוגתי כגון 99.9%), ננרמל אוטומטית שייפתח בדיוק ל-100%
+    if (Math.abs(totalPct - 100) > 0.001 && Math.abs(totalPct - 100) <= 0.5) {
+      const diff = 100 - totalPct;
+      inputsData[inputsData.length - 1].val += diff;
+      totalPct = 100;
+    }
 
     if (Math.abs(totalPct - 100) > 0.1) {
       alert(`סך האחוזים של המשפחות חייב להסתכם ל-100% (כרגע: ${totalPct.toFixed(1)}%)`);
       return;
     }
+
+    inputsData.forEach(item => {
+      shares[item.id] = item.val;
+    });
 
     if (!appData.expenses) appData.expenses = [];
 
@@ -614,7 +647,7 @@
         sharesText = Object.keys(exp.shares)
           .map(fId => {
             const f = appData.families.find(fam => fam.id === fId);
-            return f ? `${f.name.split(' ')[0]}: ${exp.shares[fId]}%` : '';
+            return f ? `${f.name.split(' ')[0]}: ${parseFloat(exp.shares[fId]).toFixed(1)}%` : '';
           })
           .filter(Boolean)
           .join(', ');
