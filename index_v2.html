@@ -639,7 +639,7 @@
   }
 
   // פונקציית החישוב המעודכנת – חישוב מדויק ברמת השברים/אגורות ועיגול רק בתצוגה
-  function renderSummary() {
+function renderSummary() {
     const tbody = document.getElementById('summaryTableBody');
     const totalsBox = document.getElementById('summaryTotalsText');
     const familySharesBox = document.getElementById('familySharesSummaryList');
@@ -665,7 +665,7 @@
     });
 
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
-    const defaultPct = 100 / appData.families.length;
+    const numFamilies = appData.families.length;
 
     appData.expenses.forEach(exp => {
       const rate = exp.currency === 'ILS' ? 1 : (appData.rates ? (appData.rates[exp.currency] || 1) : 1);
@@ -682,10 +682,21 @@
         });
       }
 
+      // חישוב אחוזים מדויק לכל הוצאה
+      let expTotalPct = 0;
+      if (exp.shares) {
+        Object.values(exp.shares).forEach(p => expTotalPct += (parseFloat(p) || 0));
+      }
+
       appData.families.forEach(f => {
-        const pct = (exp.shares && exp.shares[f.id] !== undefined) ? exp.shares[f.id] : defaultPct;
-        // חישוב מבוסס שברים מדויק
-        familyShareTotal[f.id] += amountILS * (pct / 100);
+        let shareRatio;
+        if (exp.shares && expTotalPct > 0) {
+          const familyPct = parseFloat(exp.shares[f.id]) || 0;
+          shareRatio = familyPct / expTotalPct; // חלוקה יחסית מדויקת לפי המשקל
+        } else {
+          shareRatio = 1 / numFamilies;
+        }
+        familyShareTotal[f.id] += amountILS * shareRatio;
       });
     });
 
@@ -697,13 +708,11 @@
       const paid = familyPaid[f.id] || 0;
       const exactShareAmount = familyShareTotal[f.id] || 0;
       
-      // מאזן מדויק עד רמת השבר
       const diff = paid - exactShareAmount;
       const isOpen = (openAccordionFamilyId === f.id);
 
       balances.push({ id: f.id, name: f.name, diff: diff });
       
-      // עיגול לתצוגה בלבד בלחיצה על האלמנטים
       familySharesHtml.push(`<div>• משפחת <strong>${f.name}</strong>: <strong>${formatMoney(exactShareAmount)} ₪</strong></div>`);
 
       html += `
