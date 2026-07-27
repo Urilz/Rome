@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.4.2</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.4.3</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -157,7 +157,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.2</div>
+    <div class="version-tag">גרסה 2.4.3</div>
   </div>
 
   <div class="nav-tabs">
@@ -500,27 +500,23 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ==================== פונקציית שמירת הוצאה מעודכנת ====================
   function saveExpense() {
     const dateVal = document.getElementById('expDate').value;
     const desc = document.getElementById('desc').value.trim();
     const amount = parseFloat(document.getElementById('amount').value);
     const currency = document.getElementById('currency').value;
 
-    // 1. אימות שדות חובה ומשלם
     if (!dateVal || !desc || isNaN(amount) || amount <= 0 || !activePayerId) {
       alert('נא למלא את כל השדות בצורה תקינה ולבחור משלם');
       return;
     }
 
-    // 2. אימות עברית בלבד בתיאור ההוצאה
     const hebrewPattern = /^[\u0590-\u05FF\s'"\-]+$/;
     if (!hebrewPattern.test(desc)) {
       alert('תיאור ההוצאה חייב להכיל אותיות בעברית בלבד');
       return;
     }
 
-    // 3. חישוב ואימות אחוזי החלוקה
     let shares = {};
     let totalPct = 0;
 
@@ -538,7 +534,6 @@
 
     if (!appData.expenses) appData.expenses = [];
 
-    // 4. יצירה או עדכון של הוצאה
     if (editingExpenseId) {
       const expIndex = appData.expenses.findIndex(e => String(e.id) === String(editingExpenseId));
       if (expIndex !== -1) {
@@ -565,7 +560,6 @@
       appData.expenses.push(exp);
     }
 
-    // 5. שמירה בשרת ואיפוס הטופס והתצוגות
     saveDataToSheet();
     resetExpenseForm();
     renderAll();
