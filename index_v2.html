@@ -398,37 +398,37 @@
     setInterval(fetchDataFromSheet, 10000);
   };
 
-  // משיכת שערי חליפין יציגים בזמן אמת עם תאריך, שעה ומקור
+ // משיכת שערי חליפין יציגים בזמן אמת עם תאריך, שעה ומקור
   function fetchLiveRates(silent = false) {
     if(!silent) updateSyncStatus('מעדכן שערי חליפין...');
     
-    fetch('https://api.frankfurter.app/latest?from=EUR,USD&to=ILS')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.rates) {
-          const eurRate = data.rates.ILS;
-          const usdRate = data.rates.ILS / (data.rates.USD || 1);
+    // שליפת שערי EUR ו-USD במקביל
+    Promise.all([
+      fetch('https://api.frankfurter.app/latest?from=EUR&to=ILS').then(r => r.json()),
+      fetch('https://api.frankfurter.app/latest?from=USD&to=ILS').then(r => r.json())
+    ])
+    .then(([eurData, usdData]) => {
+      const eurRate = eurData?.rates?.ILS;
+      const usdRate = usdData?.rates?.ILS;
 
-          if (eurRate) appData.rates.EUR = parseFloat(eurRate.toFixed(2));
-          if (usdRate) appData.rates.USD = parseFloat(usdRate.toFixed(2));
+      if (eurRate) appData.rates.EUR = parseFloat(eurRate.toFixed(2));
+      if (usdRate) appData.rates.USD = parseFloat(usdRate.toFixed(2));
 
-          const now = new Date();
-          const timeStr = now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
-          
-          if (!appData.ratesMeta) appData.ratesMeta = {};
-          appData.ratesMeta.lastUpdated = timeStr;
-          appData.ratesMeta.source = "שער יציג רשמי (Frankfurter / ECB)";
+      const now = new Date();
+      const timeStr = now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
+      
+      if (!appData.ratesMeta) appData.ratesMeta = {};
+      appData.ratesMeta.lastUpdated = timeStr;
+      appData.ratesMeta.source = "שער יציג רשמי (Frankfurter / ECB)";
 
-          renderAll();
-          if(!silent) alert(`שערי החליפין עודכנו בהצלחה!\nEUR: ${appData.rates.EUR} ₪\nUSD: ${appData.rates.USD} ₪\nעודכן ב: ${timeStr}`);
-        }
-      })
-      .catch(err => {
-        console.error('שגיאה בטעינת שערי חליפין בלייב:', err);
-        if(!silent) alert('לא ניתן להתחבר לשרת שערי החליפין כעת.');
-      });
+      renderAll();
+      if(!silent) alert(`שערי החליפין עודכנו בהצלחה!\nEUR: ${appData.rates.EUR} ₪\nUSD: ${appData.rates.USD} ₪\nעודכן ב: ${timeStr}`);
+    })
+    .catch(err => {
+      console.error('שגיאה בטעינת שערי חליפין בלייב:', err);
+      if(!silent) alert('לא ניתן להתחבר לשרת שערי החליפין כעת.');
+    });
   }
-
   function updateSyncStatus(msg) {
     document.getElementById('syncStatus').innerText = 'מצב סנכרון: ' + msg;
   }
