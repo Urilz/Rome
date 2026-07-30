@@ -2,144 +2,207 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מערכת ניהול וחלוקת הוצאות משפחתיות</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>מחשבון הוצאות משפחתי</title>
   <style>
     :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #3498db;
-      --success-color: #2ecc71;
-      --danger-color: #e74c3c;
-      --warning-color: #f39c12;
-      --bg-color: #f8f9fa;
+      --primary: #4a69bd;
+      --primary-dark: #1e3799;
+      --secondary: #78e08f;
+      --danger: #e55039;
+      --warning: #fa983a;
+      --bg: #f8f9fa;
       --card-bg: #ffffff;
-      --text-color: #333333;
-      --border-radius: 8px;
+      --text: #2c3e50;
+      --border-radius: 12px;
+      --shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      padding: 20px;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 12px;
       direction: rtl;
-    }
-
-    .container {
-      max-width: 1000px;
+      max-width: 800px;
       margin: 0 auto;
+      padding-bottom: 40px;
     }
 
     header {
       text-align: center;
-      margin-bottom: 25px;
+      margin-bottom: 16px;
       background: var(--card-bg);
-      padding: 20px;
+      padding: 16px;
       border-radius: var(--border-radius);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow);
     }
 
     h1 {
-      color: var(--primary-color);
-      margin-bottom: 5px;
+      font-size: 1.4rem;
+      color: var(--primary-dark);
+      margin-bottom: 4px;
+    }
+
+    .version-tag {
+      font-size: 0.8rem;
+      color: #666;
     }
 
     .card {
       background: var(--card-bg);
-      padding: 20px;
+      padding: 16px;
       border-radius: var(--border-radius);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
     }
 
     .card-title {
-      font-size: 1.2rem;
-      color: var(--primary-color);
-      margin-bottom: 15px;
-      border-bottom: 2px solid var(--bg-color);
-      padding-bottom: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 2px solid #f1f2f6;
+      padding-bottom: 8px;
+    }
+
+    .currency-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+
+    .currency-card {
+      background: #f1f2f6;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .currency-title {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .currency-value {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin-top: 2px;
     }
 
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 12px;
     }
 
     label {
       display: block;
-      margin-bottom: 5px;
+      font-size: 0.9rem;
       font-weight: 600;
+      margin-bottom: 4px;
     }
 
-    input, select, textarea {
+    input, select {
       width: 100%;
-      padding: 10px;
+      padding: 10px 12px;
       border: 1px solid #ddd;
-      border-radius: 4px;
+      border-radius: 8px;
       font-size: 1rem;
+      background-color: #fff;
+    }
+
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: #f1f2f6;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .checkbox-item input {
+      width: auto;
     }
 
     .btn {
-      background-color: var(--secondary-color);
-      color: white;
+      width: 100%;
+      padding: 12px;
       border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
+      border-radius: 8px;
       font-size: 1rem;
-      transition: background-color 0.2s;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s, opacity 0.2s;
     }
 
-    .btn:hover {
-      background-color: #2980b9;
+    .btn:active {
+      opacity: 0.8;
     }
 
-    .btn-success { background-color: var(--success-color); }
-    .btn-success:hover { background-color: #27ae60; }
-    
-    .btn-excel { background-color: #1d6f42; }
-    .btn-excel:hover { background-color: #155231; }
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
 
-    .btn-danger { background-color: var(--danger-color); }
-    .btn-danger:hover { background-color: #c0392b; }
+    .btn-excel {
+      background-color: #1e7e34;
+      color: white;
+      padding: 6px 12px;
+      width: auto;
+      font-size: 0.85rem;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+      padding: 4px 8px;
+      width: auto;
+      font-size: 0.75rem;
+      border-radius: 4px;
+    }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      font-size: 0.85rem;
     }
 
     th, td {
-      padding: 12px;
+      padding: 8px 4px;
       text-align: right;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #eee;
     }
 
     th {
-      background-color: #f1f1f1;
-      color: var(--primary-color);
+      color: #666;
+      font-weight: 600;
     }
 
     .accordion-toggle {
       cursor: pointer;
-      background-color: #fdfdfd;
-    }
-
-    .accordion-toggle:hover {
-      background-color: #f1f1f1;
     }
 
     .details-row {
       display: none;
-      background-color: #f9f9f9;
+      background-color: #f8f9fa;
     }
 
     .details-row.active {
@@ -147,195 +210,223 @@
     }
 
     .inner-table {
-      margin: 10px 0;
+      margin: 8px 0;
       background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
     }
 
-    .settlement-item {
+    .inner-table th, .inner-table td {
+      padding: 6px;
+    }
+
+    .settlement-card {
+      background: #eccc68;
+      background: linear-gradient(135deg, #fffae6 0%, #ffeaa7 100%);
+      border-right: 4px solid var(--warning);
       padding: 10px;
-      background: #e8f8f5;
-      border-right: 4px solid var(--success-color);
+      border-radius: 6px;
       margin-bottom: 8px;
-      border-radius: 4px;
+      font-size: 0.9rem;
     }
 
     .empty-msg {
       text-align: center;
-      color: #7f8c8d;
-      padding: 15px;
+      color: #888;
+      padding: 12px;
+      font-size: 0.85rem;
     }
 
     #syncStatus {
-      font-size: 0.9rem;
-      padding: 5px 10px;
-      border-radius: 4px;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 10px;
       display: inline-block;
+      margin-top: 4px;
     }
 
-    .status-ok { background-color: #d4edda; color: #155724; }
-    .status-error { background-color: #f8d7da; color: #721c24; }
-    .status-loading { background-color: #fff3cd; color: #856404; }
+    .status-ok { background: #e1f5fe; color: #0288d1; }
+    .status-loading { background: #fff8e1; color: #ffa000; }
+    .status-error { background: #ffebee; color: #c62828; }
 
-    .checkbox-group {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .checkbox-item input {
-      width: auto;
+    @media (max-width: 480px) {
+      body { padding: 8px; }
+      .card { padding: 12px; }
+      th, td { padding: 6px 2px; font-size: 0.8rem; }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <h1>מערכת ניהול הוצאות משפחתיות</h1>
-    <p>גרסה 2.4.9 (מעודכנת)</p>
-    <div style="margin-top: 10px;">
-      סטטוס סנכרון: <span id="syncStatus" class="status-ok">מוכן</span>
+<header>
+  <h1>מחשבון הוצאות משפחתי</h1>
+  <div class="version-tag">גרסה 2.4.9 (מעודכנת)</div>
+  <div><span id="syncStatus" class="status-ok">סנכרון תקין</span></div>
+</header>
+
+<!-- כרטיסיית שערי מטבע -->
+<div class="card">
+  <div class="card-title">שערי מטבע (בזמן אמת)</div>
+  <div class="currency-grid">
+    <div class="currency-card">
+      <div class="currency-title">דולר (USD)</div>
+      <div class="currency-value" id="usdRate">---</div>
     </div>
-  </header>
-
-  <!-- טופס הזנת הוצאה -->
-  <div class="card">
-    <div class="card-title">הזנת הוצאה חדשה</div>
-    <form id="expenseForm">
-      <div class="form-group">
-        <label for="payer">משפחה משלמת:</label>
-        <select id="payer" required>
-          <option value="">בחר משפחה...</option>
-          <option value="אברהם">אברהם</option>
-          <option value="לוי">לוי</option>
-          <option value="כהן">כהן</option>
-          <option value="ישראלי">ישראלי</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="amount">סכום (₪):</label>
-        <input type="number" id="amount" step="0.01" min="0.1" required placeholder="0.00">
-      </div>
-
-      <div class="form-group">
-        <label for="description">תיאור ההוצאה:</label>
-        <input type="text" id="description" required placeholder="לדוגמה: סופר שופרסל (קנייה 1)">
-      </div>
-
-      <div class="form-group">
-        <label>משפחות משתתפות בהוצאה:</label>
-        <div class="checkbox-group">
-          <label class="checkbox-item"><input type="checkbox" name="participants" value="אברהם" checked> אברהם</label>
-          <label class="checkbox-item"><input type="checkbox" name="participants" value="לוי" checked> לוי</label>
-          <label class="checkbox-item"><input type="checkbox" name="participants" value="כהן" checked> כהן</label>
-          <label class="checkbox-item"><input type="checkbox" name="participants" value="ישראלי" checked> ישראלי</label>
-        </div>
-      </div>
-
-      <button type="submit" class="btn btn-success">רושם הוצאה</button>
-    </form>
-  </div>
-
-  <!-- סיכום ואיזון חובות -->
-  <div class="card">
-    <div class="card-title">
-      <span>סיכום ואיזון חובות</span>
-      <button onclick="exportToExcel()" class="btn btn-excel">ייצוא נתונים לאקסל</button>
+    <div class="currency-card">
+      <div class="currency-title">אירו (EUR)</div>
+      <div class="currency-value" id="eurRate">---</div>
     </div>
-    
-    <table>
-      <thead>
-        <tr>
-          <th>משפחה</th>
-          <th>סה"כ שילמה</th>
-          <th>סה"כ חובת חלקה</th>
-          <th>מאזן (לבלוט/לחוב)</th>
-          <th>פירוט</th>
-        </tr>
-      </thead>
-      <tbody id="summaryTableBody">
-        <!-- יתמלא דינמית -->
-      </tbody>
-    </table>
-
-    <h3 style="margin-top: 20px; margin-bottom: 10px; color: var(--primary-color);">הסדרי תשלום מומלצים:</h3>
-    <div id="settlementList">
-      <!-- יתמלא דינמית -->
+    <div class="currency-card">
+      <div class="currency-title">פונט (GBP)</div>
+      <div class="currency-value" id="gbpRate">---</div>
     </div>
-  </div>
-
-  <!-- יומן הוצאות -->
-  <div class="card">
-    <div class="card-title">יומן הוצאות כללי</div>
-    <table>
-      <thead>
-        <tr>
-          <th>תאריך</th>
-          <th>משלם</th>
-          <th>תיאור</th>
-          <th>סכום</th>
-          <th>משתתפים</th>
-          <th>פעולות</th>
-        </tr>
-      </thead>
-      <tbody id="expensesLogTable">
-        <!-- יתמלא דינמית -->
-      </tbody>
-    </table>
   </div>
 </div>
 
-<script>
-  // קבועים והגדרות
-  const ADMIN_PASS = "7350";
-  const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; // נא להחליף במידת הצורך
+<!-- טופס הזנת הוצאה -->
+<div class="card">
+  <div class="card-title">הזנת הוצאה חדשה</div>
+  <form id="expenseForm">
+    <div class="form-group">
+      <label for="payer">משפחה משלמת:</label>
+      <select id="payer" required>
+        <option value="">בחר משפחה...</option>
+        <option value="אברהם">אברהם</option>
+        <option value="לוי">לוי</option>
+        <option value="כהן">כהן</option>
+        <option value="ישראלי">ישראלי</option>
+      </select>
+    </div>
 
+    <div class="form-group">
+      <label for="amount">סכום (₪):</label>
+      <input type="number" id="amount" step="0.01" min="0.1" required placeholder="0.00">
+    </div>
+
+    <div class="form-group">
+      <label for="description">תיאור ההוצאה:</label>
+      <input type="text" id="description" required placeholder="תיאור (עברית, מספרים, סוגריים)">
+    </div>
+
+    <div class="form-group">
+      <label>משתתפים בהוצאה:</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" name="participants" value="אברהם" checked> אברהם</label>
+        <label class="checkbox-item"><input type="checkbox" name="participants" value="לוי" checked> לוי</label>
+        <label class="checkbox-item"><input type="checkbox" name="participants" value="כהן" checked> כהן</label>
+        <label class="checkbox-item"><input type="checkbox" name="participants" value="ישראלי" checked> ישראלי</label>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">הוסף הוצאה</button>
+  </form>
+</div>
+
+<!-- סיכום ואיזון חובות -->
+<div class="card">
+  <div class="card-title">
+    <span>סיכום ואיזון</span>
+    <button onclick="exportToExcel()" class="btn btn-excel">ייצוא לאקסל</button>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>משפחה</th>
+        <th>שילמה</th>
+        <th>חלק בהוצאות</th>
+        <th>מאזן</th>
+        <th>פירוט</th>
+      </tr>
+    </thead>
+    <tbody id="summaryTableBody">
+      <!-- דינמי -->
+    </tbody>
+  </table>
+
+  <div style="margin-top: 16px; font-weight: bold; font-size: 0.9rem; color: var(--primary-dark);">הסדרי תשלום מומלצים:</div>
+  <div id="settlementList" style="margin-top: 8px;">
+    <!-- דינמי -->
+  </div>
+</div>
+
+<!-- יומן הוצאות -->
+<div class="card">
+  <div class="card-title">יומן הוצאות</div>
+  <table>
+    <thead>
+      <tr>
+        <th>תאריך</th>
+        <th>משלם</th>
+        <th>תיאור</th>
+        <th>סכום</th>
+        <th>פעולות</th>
+      </tr>
+    </thead>
+    <tbody id="expensesLogTable">
+      <!-- דינמי -->
+    </tbody>
+  </table>
+</div>
+
+<script>
+  const ADMIN_PASS = "7350";
+  const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
   const FAMILIES = ["אברהם", "לוי", "כהן", "ישראלי"];
+  
   let expenses = JSON.parse(localStorage.getItem('expenses_db')) || [];
 
-  // אתחול
   document.addEventListener('DOMContentLoaded', () => {
+    fetchCurrencyRates();
     renderAll();
-    
     document.getElementById('expenseForm').addEventListener('submit', handleAddExpense);
   });
 
-  // עדכון הסטטוס במסך
-  function setStatus(message, type) {
+  // שליפת שערי מטבע
+  async function fetchCurrencyRates() {
+    try {
+      const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      if (res.ok) {
+        const data = await res.json();
+        const ilsRate = data.rates.ILS;
+        const eurRate = data.rates.EUR;
+        const gbpRate = data.rates.GBP;
+
+        document.getElementById('usdRate').textContent = `₪${ilsRate.toFixed(2)}`;
+        document.getElementById('eurRate').textContent = `₪${(ilsRate / eurRate).toFixed(2)}`;
+        document.getElementById('gbpRate').textContent = `₪${(ilsRate / gbpRate).toFixed(2)}`;
+      }
+    } catch (e) {
+      console.error('Currency fetch error:', e);
+      document.getElementById('usdRate').textContent = 'שגיאה';
+    }
+  }
+
+  function setStatus(msg, statusClass) {
     const el = document.getElementById('syncStatus');
-    el.textContent = message;
-    el.className = 'status-' + type;
+    el.textContent = msg;
+    el.className = 'status-' + statusClass;
   }
 
-  // פורמט מטבע
-  function formatMoney(amount) {
-    return Number(amount).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function formatMoney(num) {
+    return Number(num).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // הוספת הוצאה
   function handleAddExpense(e) {
     e.preventDefault();
 
     const payer = document.getElementById('payer').value;
     const amount = parseFloat(document.getElementById('amount').value);
     const description = document.getElementById('description').value.trim();
-    
-    // בדיקת תקינות תיאור בעברית כולל מספרים וסוגריים
+
+    // רגקס מעודכן המאפשר עברית, מספרים, רווחים וסוגריים
     const descRegex = /^[\u0590-\u05FF0-9\s'"\-\(\)]+$/;
     if (!descRegex.test(description)) {
-      alert("תיאור ההוצאה כולל תווים לא תקינים. נא להזין עברית, מספרים ופיסוק בסיסי בלבד.");
+      alert("תיאור ההוצאה יכול להכיל עברית, מספרים, רווחים וסוגריים בלבד.");
       return;
     }
 
-    const participantCheckboxes = document.querySelectorAll('input[name="participants"]:checked');
-    const participants = Array.from(participantCheckboxes).map(cb => cb.value);
+    const participants = Array.from(document.querySelectorAll('input[name="participants"]:checked')).map(cb => cb.value);
 
     if (participants.length === 0) {
       alert("יש לבחור לפחות משפחה אחת משתתפת.");
@@ -354,13 +445,11 @@
     expenses.push(newExpense);
     saveData();
     renderAll();
-    
-    // איפוס טופס
+
     e.target.reset();
     document.querySelectorAll('input[name="participants"]').forEach(cb => cb.checked = true);
   }
 
-  // מחיקת הוצאה עם סיסמת מנהל
   function deleteExpense(id) {
     const pass = prompt("הכנס סיסמת מנהל למחיקה:");
     if (pass === ADMIN_PASS) {
@@ -372,47 +461,44 @@
     }
   }
 
-  // שמירה וסנכרון מרחוק
   async function saveData() {
     localStorage.setItem('expenses_db', JSON.stringify(expenses));
 
     if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
-      setStatus("נשמר מקומית בלבד", "ok");
+      setStatus("שמור מקומית", "ok");
       return;
     }
 
     setStatus("מסנכרן...", "loading");
 
     try {
-      const response = await fetch(GOOGLE_SCRIPT_URL, {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(expenses),
         redirect: 'follow'
       });
 
-      if (response.ok) {
-        setStatus("מסונכרן בהצלחה", "ok");
+      if (res.ok) {
+        setStatus("סנכרון תקין", "ok");
       } else {
-        throw new Error("תגובת שרת לא תקינה");
+        throw new Error("שגיאה בתשובת השרת");
       }
     } catch (err) {
-      console.error("Sync Error:", err);
-      setStatus("שגיאת סנכרון ברשת", "error");
+      console.error(err);
+      setStatus("שגיאת תקשורת", "error");
     }
   }
 
-  // רינדור כל התצוגות
   function renderAll() {
     renderSummary();
     renderLog();
   }
 
-  // רינדור יומן הוצאות
   function renderLog() {
     const tbody = document.getElementById('expensesLogTable');
     if (expenses.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">אין הוצאות רשומות</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">אין הוצאות רשומות</td></tr>';
       return;
     }
 
@@ -421,20 +507,18 @@
         <td>${exp.date}</td>
         <td><strong>${exp.payer}</strong></td>
         <td>${exp.description}</td>
-        <td>${formatMoney(exp.amount)} ₪</td>
-        <td>${exp.participants.join(', ')}</td>
+        <td>₪${formatMoney(exp.amount)}</td>
         <td>
-          <button onclick="deleteExpense('${exp.id}')" class="btn btn-danger" style="padding: 3px 8px; font-size: 0.8rem;">מחק</button>
+          <button onclick="deleteExpense('${exp.id}')" class="btn-danger">מחק</button>
         </td>
       </tr>
     `).join('');
   }
 
-  // רינדור טבלת סיכום ואיזון
   function renderSummary() {
     const summaryBody = document.getElementById('summaryTableBody');
-    
     let totals = {};
+
     FAMILIES.forEach(fam => {
       totals[fam] = { paid: 0, share: 0, items: [] };
     });
@@ -443,7 +527,6 @@
       if (totals[exp.payer]) {
         totals[exp.payer].paid += exp.amount;
       }
-      
       const splitAmount = exp.amount / exp.participants.length;
       exp.participants.forEach(part => {
         if (totals[part]) {
@@ -467,23 +550,23 @@
 
       balances.push({ name: fam, diff });
 
-      const diffClass = diff > 0 ? 'color: green; font-weight: bold;' : (diff < 0 ? 'color: red; font-weight: bold;' : '');
+      const diffColor = diff > 0 ? 'color: var(--secondary); font-weight:bold;' : (diff < 0 ? 'color: var(--danger); font-weight:bold;' : '');
 
       summaryHtml += `
         <tr class="accordion-toggle" onclick="toggleAccordion('acc-${idx}')">
           <td><strong>${fam}</strong></td>
-          <td>${formatMoney(paid)} ₪</td>
-          <td>${formatMoney(share)} ₪</td>
-          <td style="${diffClass}">${formatMoney(diff)} ₪</td>
-          <td><button class="btn" style="padding: 2px 8px; font-size: 0.8rem;">פירוט ▾</button></td>
+          <td>₪${formatMoney(paid)}</td>
+          <td>₪${formatMoney(share)}</td>
+          <td style="${diffColor}">₪${formatMoney(diff)}</td>
+          <td><span style="font-size:0.75rem;">▼</span></td>
         </tr>
         <tr id="acc-${idx}" class="details-row">
           <td colspan="5">
             <table class="inner-table">
               <thead>
                 <tr>
-                  <th>תיאור ההוצאה</th>
-                  <th>משלם מקורי</th>
+                  <th>תיאור</th>
+                  <th>משלם</th>
                   <th>חלק יחסי</th>
                 </tr>
               </thead>
@@ -492,7 +575,7 @@
                   <tr>
                     <td>${item.description}</td>
                     <td>${item.payer}</td>
-                    <td>${formatMoney(item.cost)} ₪</td>
+                    <td>₪${formatMoney(item.cost)}</td>
                   </tr>
                 `).join('') : '<tr><td colspan="3" class="empty-msg">אין חיובים</td></tr>'}
               </tbody>
@@ -504,7 +587,7 @@
 
     summaryBody.innerHTML = summaryHtml;
 
-    // חישוב הסדרי תשלום וקיזוז חובות
+    // חישוב הסדרי תשלום
     let debtors = balances.filter(b => b.diff < -0.01).sort((a, b) => a.diff - b.diff);
     let creditors = balances.filter(b => b.diff > 0.01).sort((a, b) => b.diff - a.diff);
 
@@ -517,8 +600,8 @@
       let amount = Math.min(-debtor.diff, creditor.diff);
 
       settlementHtml += `
-        <div class="settlement-item">
-          משפחת <strong>${debtor.name}</strong> משלמת למשפחת <strong>${creditor.name}</strong>: <strong>${formatMoney(amount)} ₪</strong>
+        <div class="settlement-card">
+          <strong>משפחת ${debtor.name}</strong> מעבירה ל<strong>משפחת ${creditor.name}</strong>: <strong>₪${formatMoney(amount)}</strong>
         </div>
       `;
 
@@ -532,7 +615,6 @@
     document.getElementById('settlementList').innerHTML = settlementHtml || '<div class="empty-msg">כל החשבונות מאוזנים!</div>';
   }
 
-  // תפעול אקורדיון
   function toggleAccordion(id) {
     const row = document.getElementById(id);
     if (row) {
@@ -540,36 +622,29 @@
     }
   }
 
-  // ייצוא נתונים לאקסל (CSV) עם תמיכה מלאה בעברית
   function exportToExcel() {
     if (expenses.length === 0) {
       alert("אין נתונים לייצוא.");
       return;
     }
 
-    let csvContent = "\uFEFF"; // BOM לתמיכה בעברית באקסל
-
-    // חלק 1: יומן הוצאות
-    csvContent += "יומן הוצאות\n";
-    csvContent += "תאריך,משלם,תיאור,סכום,משתתפים\n";
+    let csv = "\uFEFF"; // BOM לעברית באקסל
+    csv += "תאריך,משלם,תיאור,סכום,משתתפים\n";
 
     expenses.forEach(exp => {
       const desc = `"${exp.description.replace(/"/g, '""')}"`;
       const parts = `"${exp.participants.join(', ')}"`;
-      csvContent += `${exp.date},${exp.payer},${desc},${exp.amount},${parts}\n`;
+      csv += `${exp.date},${exp.payer},${desc},${exp.amount},${parts}\n`;
     });
 
-    csvContent += "\n\n";
-
-    // הורדת הקובץ
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `דוח_הוצאות_משפחתי_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `הוצאות_משפחתיות_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 </script>
 
