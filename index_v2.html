@@ -168,7 +168,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.7</div>
+    <div class="version-tag">גרסה 2.4.77</div>
   </div>
 
   <div class="nav-tabs">
@@ -897,43 +897,60 @@
     let creditors = balances.filter(b => b.diff > 0.01).map(b => ({ ...b }));
 
     if (debtors.length === 0 && creditors.length === 0) {
-      container.innerHTML = '<div class="empty-msg">החשבון מאוזן לחלוטין!</div>';
+      container.innerHTML = '<div class="empty-msg">החשבונות מאוזנים! אין חובות בין המשפחות.</div>';
       return;
     }
 
     let settlements = [];
 
-    debtors.forEach(d => {
-      creditors.forEach(c => {
-        if (d.diff <= 0.01 || c.diff <= 0.01) return;
+    let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      let debtor = debtors[i];
+      let creditor = creditors[j];
+      let amount = Math.min(debtor.diff, creditor.diff);
 
-        let amountToPay = Math.min(d.diff, c.diff);
-        settlements.push(`משפחת <strong>${d.name}</strong> מעבירה למשפחת <strong>${c.name}</strong>: <strong>${formatMoney(amountToPay)} ₪</strong>`);
+      if (amount > 0.5) {
+        settlements.push(`משפחת <strong>${debtor.name}</strong> מעבירה למשפחת <strong>${creditor.name}</strong>: <strong>${formatMoney(amount)} ₪</strong>`);
+      }
 
-        d.diff -= amountToPay;
-        c.diff -= amountToPay;
-      });
-    });
+      debtor.diff -= amount;
+      creditor.diff -= amount;
 
-    container.innerHTML = settlements.map(s => `<div class="settlement-item">📌 ${s}</div>`).join('');
+      if (debtor.diff < 0.01) i++;
+      if (creditor.diff < 0.01) j++;
+    }
+
+    if (settlements.length === 0) {
+      container.innerHTML = '<div class="empty-msg">החשבונות מאוזנים!</div>';
+    } else {
+      container.innerHTML = settlements.map(s => `<div class="settlement-item">👉 ${s}</div>`).join('');
+    }
   }
 
   function renderAdminLists() {
-    const userFamilySelect = document.getElementById('userFamilySelect');
-    if (userFamilySelect) {
-      userFamilySelect.innerHTML = appData.families.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
-    }
+    const familySelect = document.getElementById('userFamilySelect');
+    familySelect.innerHTML = '';
+    (appData.families || []).forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.innerText = f.name;
+      familySelect.appendChild(opt);
+    });
 
     const tbody = document.getElementById('usersAdminList');
-    if (!tbody) return;
-
     tbody.innerHTML = '';
-    (appData.users || []).forEach(u => {
-      const fam = appData.families.find(f => f.id === u.familyId);
+
+    if (!appData.users || appData.users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">אין משתמשים במערכת</td></tr>';
+      return;
+    }
+
+    appData.users.forEach(u => {
+      const fam = appData.families.find(f => f.id === u.familyId) || { name: 'ללא שיוך' };
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${u.firstName} ${u.lastName}</td>
-        <td>${fam ? fam.name : 'ללא משפחה'}</td>
+        <td>${fam.name}</td>
         <td>
           <button class="action-btn delete-btn" title="מחק משתמש" onclick="deleteUser('${u.id}')">✕</button>
         </td>
@@ -943,44 +960,65 @@
   }
 
   function addFamily() {
-    const name = document.getElementById('newFamilyName').value.trim();
-    if (!name) return alert('נא להזין שם משפחה');
+    const nameInput = document.getElementById('newFamilyName');
+    const name = nameInput.value.trim();
 
-    const newFam = { id: 'FAM_' + Date.now(), name: name };
+    if (!name) {
+      alert('נא להזין שם משפחה');
+      return;
+    }
+
+    const newFam = {
+      id: 'FAM_' + Date.now(),
+      name: name
+    };
+
+    if (!appData.families) appData.families = [];
     appData.families.push(newFam);
 
     saveDataToSheet();
-    document.getElementById('newFamilyName').value = '';
+    nameInput.value = '';
     renderAll();
   }
 
   function addUser() {
-    const fn = document.getElementById('newUserFirstName').value.trim();
-    const ln = document.getElementById('newUserLastName').value.trim();
-    const famId = document.getElementById('userFamilySelect').value;
+    const firstNameInput = document.getElementById('newUserFirstName');
+    const lastNameInput = document.getElementById('newUserLastName');
+    const familySelect = document.getElementById('userFamilySelect');
 
-    if (!fn || !ln || !famId) return alert('נא למלא את כל שדות המשתמש');
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    const familyId = familySelect.value;
 
-    const newUser = { id: 'U_' + Date.now(), firstName: fn, lastName: ln, familyId: famId };
-    appData.users.push(newUser);
-
-    saveDataToSheet();
-    document.getElementById('newUserFirstName').value = '';
-    document.getElementById('newUserLastName').value = '';
-    renderAll();
-  }
-
-  function deleteUser(uId) {
-    const pass = prompt("הזן סיסמת מנהל למחיקת משתמש:");
-    if (pass !== ADMIN_PASS) {
-      if (pass !== null) alert("סיסמה שגויה!");
+    if (!firstName || !lastName || !familyId) {
+      alert('נא למלא את כל השדות להוספת משתמש');
       return;
     }
 
-    appData.users = appData.users.filter(u => String(u.id) !== String(uId));
+    const newUser = {
+      id: 'U_' + Date.now(),
+      firstName: firstName,
+      lastName: lastName,
+      familyId: familyId
+    };
+
+    if (!appData.users) appData.users = [];
+    appData.users.push(newUser);
+
+    saveDataToSheet();
+    firstNameInput.value = '';
+    lastNameInput.value = '';
+    renderAll();
+  }
+
+  function deleteUser(userId) {
+    if (!confirm('האם אתה בטוח שברצונך למחוק משתמש זה?')) return;
+
+    appData.users = appData.users.filter(u => String(u.id) !== String(userId));
     saveDataToSheet();
     renderAll();
   }
 </script>
+
 </body>
 </html>
