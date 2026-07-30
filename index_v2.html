@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.4.8</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.4.77</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -168,7 +168,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.8</div>
+    <div class="version-tag">גרסה 2.4.7</div>
   </div>
 
   <div class="nav-tabs">
@@ -224,7 +224,7 @@
 
       <!-- 2. אחוזי חלוקה -->
       <div class="shares-box">
-        <label style="margin-bottom:0;">חלוקת אחוזים למשפחות פעילות (%)</label>
+        <label style="margin-bottom:0;">חלוקת אחוזים להוצאה זו (%)</label>
         <div class="shares-grid" id="expenseSharesContainer"></div>
       </div>
 
@@ -359,7 +359,8 @@
 </div>
 
 <script>
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPLt2-qGVz6cTMAJpzgH5dksR4xb1ilDc3NBFe9gqFD9ZcL2cg-mk63JhBNMvofmIHug/exec";
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_9MzfMPKMVKfF9e-U11Hb3rhchcQz_OUxMR17HBsUGpmFrc9cz4DPuJRDx4pBik4QYg/exec";
+    
   const ADMIN_PASS = "7350";
 
   let isAdminUnlocked = false;
@@ -397,42 +398,29 @@
     setInterval(fetchDataFromSheet, 10000);
   };
 
-  // מציג משפחות פעילות כעת (כאלו שיש להן לפחות משתמש קיים אחד)
-  function getActiveFamilies() {
-    const activeFamilyIds = new Set((appData.users || []).map(u => u.familyId));
-    return (appData.families || []).filter(f => activeFamilyIds.has(f.id));
-  }
-
-  // עדכון שערי חליפין בלייב באמצעות API התומך ב-CORS
   function fetchLiveRates(silent = false) {
     if(!silent) updateSyncStatus('מעדכן שערי חליפין...');
     
-    fetch('https://open.er-api.com/v6/latest/USD')
+    fetch('https://api.frankfurter.app/latest?from=EUR,USD&to=ILS')
       .then(res => res.json())
       .then(data => {
-        if (data && data.rates && data.rates.ILS) {
-          const usdToIls = data.rates.ILS;
-          appData.rates.USD = parseFloat(usdToIls.toFixed(2));
+        if (data && data.rates) {
+          const eurRate = data.rates.ILS;
+          const usdRate = data.rates.ILS / (data.rates.USD || 1);
 
-          return fetch('https://open.er-api.com/v6/latest/EUR')
-            .then(resEur => resEur.json())
-            .then(eurData => {
-              if (eurData && eurData.rates && eurData.rates.ILS) {
-                appData.rates.EUR = parseFloat(eurData.rates.ILS.toFixed(2));
-              }
-            });
+          if (eurRate) appData.rates.EUR = parseFloat(eurRate.toFixed(2));
+          if (usdRate) appData.rates.USD = parseFloat(usdRate.toFixed(2));
+
+          const now = new Date();
+          const timeStr = now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
+          
+          if (!appData.ratesMeta) appData.ratesMeta = {};
+          appData.ratesMeta.lastUpdated = timeStr;
+          appData.ratesMeta.source = "שער יציג רשמי (Frankfurter / ECB)";
+
+          renderAll();
+          if(!silent) alert(`שערי החליפין עודכנו בהצלחה!\nEUR: ${appData.rates.EUR} ₪\nUSD: ${appData.rates.USD} ₪\nעודכן ב: ${timeStr}`);
         }
-      })
-      .then(() => {
-        const now = new Date();
-        const timeStr = now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
-        
-        if (!appData.ratesMeta) appData.ratesMeta = {};
-        appData.ratesMeta.lastUpdated = timeStr;
-        appData.ratesMeta.source = "שער יציג רשמי (Open ExchangeRates)";
-
-        renderAll();
-        if(!silent) alert(`שערי החליפין עודכנו בהצלחה!\nEUR: ${appData.rates.EUR} ₪\nUSD: ${appData.rates.USD} ₪\nעודכן ב: ${timeStr}`);
       })
       .catch(err => {
         console.error('שגיאה בטעינת שערי חליפין בלייב:', err);
@@ -525,7 +513,7 @@
 
     const ratesInfo = document.getElementById('ratesInfo');
     if (appData.ratesMeta && appData.ratesMeta.lastUpdated) {
-      ratesInfo.innerText = `מקור שער יציג: ${appData.ratesMeta.source || 'Open ExchangeRates'} | עדכון אחרון: ${appData.ratesMeta.lastUpdated}`;
+      ratesInfo.innerText = `מקור שער יציג: ${appData.ratesMeta.source || 'Frankfurter API'} | עדכון אחרון: ${appData.ratesMeta.lastUpdated}`;
     } else {
       ratesInfo.innerText = `מקור שער יציג: ברירת מחדל | יש ללחוץ על רענון לעדכון חי`;
     }
@@ -541,10 +529,10 @@
     const container = document.getElementById('payersContainer');
     container.innerHTML = '';
 
-    const usersList = appData.users || [];
+    const usersList = (appData.users && appData.users.length > 0) ? appData.users : DEFAULT_USERS;
 
-    if (!activePayerId || !usersList.some(u => u.id === activePayerId)) {
-      if (usersList.length > 0) activePayerId = usersList[0].id;
+    if (!activePayerId && usersList.length > 0) {
+      activePayerId = usersList[0].id;
     }
 
     usersList.forEach(u => {
@@ -564,29 +552,12 @@
     const container = document.getElementById('expenseSharesContainer');
     container.innerHTML = '';
 
-    // מציג רק משפחות פעילות בלבד בטופס הוספה חדש
-    let familiesToDisplay = getActiveFamilies();
+    if (!appData.families || appData.families.length === 0) return;
 
-    // בעת עריכה - נוודא שגם משפחה שהייתה חלק מהוצאת העבר תוצג בעריכה
-    if (overrideShares) {
-      const historicalFamIds = Object.keys(overrideShares);
-      const allFamsMap = new Map((appData.families || []).map(f => [f.id, f]));
-      historicalFamIds.forEach(id => {
-        if (!familiesToDisplay.some(f => f.id === id) && allFamsMap.has(id)) {
-          familiesToDisplay.push(allFamsMap.get(id));
-        }
-      });
-    }
-
-    if (familiesToDisplay.length === 0) {
-      container.innerHTML = '<div style="font-size:12px; color:var(--text-muted);">אין משפחות פעילות במערכת</div>';
-      return;
-    }
-
-    const count = familiesToDisplay.length;
+    const count = appData.families.length;
     let baseShare = 100 / count;
 
-    familiesToDisplay.forEach((f, idx) => {
+    appData.families.forEach((f, idx) => {
       const div = document.createElement('div');
       div.className = 'share-item';
 
@@ -650,25 +621,11 @@
       return;
     }
 
-    let activeFamList = getActiveFamilies();
-    if (editingExpenseId) {
-      const existingExp = appData.expenses.find(e => String(e.id) === String(editingExpenseId));
-      if (existingExp && existingExp.shares) {
-        const historicalFamIds = Object.keys(existingExp.shares);
-        const allFamsMap = new Map((appData.families || []).map(f => [f.id, f]));
-        historicalFamIds.forEach(id => {
-          if (!activeFamList.some(f => f.id === id) && allFamsMap.has(id)) {
-            activeFamList.push(allFamsMap.get(id));
-          }
-        });
-      }
-    }
-
     let shares = {};
     let totalPct = 0;
     let inputsData = [];
 
-    activeFamList.forEach((f) => {
+    appData.families.forEach((f, idx) => {
       const input = document.getElementById(`expShare_${f.id}`);
       let val = input ? parseFloat(input.value) || 0 : 0;
       
@@ -681,7 +638,7 @@
       totalPct += val;
     });
 
-    if (Math.abs(totalPct - 100) > 0.001 && Math.abs(totalPct - 100) <= 0.5 && inputsData.length > 0) {
+    if (Math.abs(totalPct - 100) > 0.001 && Math.abs(totalPct - 100) <= 0.5) {
       const diff = 100 - totalPct;
       inputsData[inputsData.length - 1].val += diff;
       totalPct = 100;
@@ -764,22 +721,21 @@
     }
 
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
-    const allFamsMap = new Map((appData.families || []).map(f => [f.id, f.name]));
 
     appData.expenses.slice().reverse().forEach(exp => {
       const tr = document.createElement('tr');
       const rate = exp.currency === 'ILS' ? 1 : (appData.rates ? (appData.rates[exp.currency] || 1) : 1);
       const amountILS = exp.amount * rate;
       
-      const user = appData.users.find(u => u.id === exp.payerId) || { firstName: 'משתמש שהוסר', lastName: '', familyId: '' };
-      const family = appData.families.find(f => f.id === user.familyId) || { name: '-' };
+      const user = appData.users.find(u => u.id === exp.payerId) || { firstName: 'לא ידוע', lastName: '', familyId: '' };
+      const family = appData.families.find(f => f.id === user.familyId) || { name: 'ללא משפחה' };
 
       let sharesText = '-';
       if (exp.shares) {
         sharesText = Object.keys(exp.shares)
           .map(fId => {
-            const famName = allFamsMap.get(fId) || fId;
-            return `${famName.split(' ')[0]}: ${parseFloat(exp.shares[fId]).toFixed(1)}%`;
+            const f = appData.families.find(fam => fam.id === fId);
+            return f ? `${f.name.split(' ')[0]}: ${parseFloat(exp.shares[fId]).toFixed(1)}%` : '';
           })
           .filter(Boolean)
           .join(', ');
@@ -833,6 +789,7 @@
     });
 
     const symbols = { ILS: '₪', EUR: '€', USD: '$' };
+    const numFamilies = appData.families.length;
 
     appData.expenses.forEach(exp => {
       const rate = exp.currency === 'ILS' ? 1 : (appData.rates ? (appData.rates[exp.currency] || 1) : 1);
@@ -852,14 +809,18 @@
       let expTotalPct = 0;
       if (exp.shares) {
         Object.values(exp.shares).forEach(p => expTotalPct += (parseFloat(p) || 0));
-        
-        Object.keys(exp.shares).forEach(fId => {
-          if (familyShareTotal[fId] === undefined) familyShareTotal[fId] = 0;
-          const familyPct = parseFloat(exp.shares[fId]) || 0;
-          const shareRatio = expTotalPct > 0 ? (familyPct / expTotalPct) : 0;
-          familyShareTotal[fId] += amountILS * shareRatio;
-        });
       }
+
+      appData.families.forEach(f => {
+        let shareRatio;
+        if (exp.shares && expTotalPct > 0) {
+          const familyPct = parseFloat(exp.shares[f.id]) || 0;
+          shareRatio = familyPct / expTotalPct;
+        } else {
+          shareRatio = 1 / numFamilies;
+        }
+        familyShareTotal[f.id] += amountILS * shareRatio;
+      });
     });
 
     let html = '';
