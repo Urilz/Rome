@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול הוצאות משפחתי - גרסה 2.4.8</title>
+  <title>ניהול הוצאות משפחתי - גרסה 2.4.9</title>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
@@ -168,7 +168,7 @@
 
   <div class="top-bar">
     <div id="syncStatus" class="sync-status">מצב סנכרון: מאתחל...</div>
-    <div class="version-tag">גרסה 2.4.8</div>
+    <div class="version-tag">גרסה 2.4.9</div>
   </div>
 
   <div class="nav-tabs">
@@ -397,13 +397,11 @@
     setInterval(fetchDataFromSheet, 10000);
   };
 
-  // מציג משפחות פעילות כעת (כאלו שיש להן לפחות משתמש קיים אחד)
   function getActiveFamilies() {
     const activeFamilyIds = new Set((appData.users || []).map(u => u.familyId));
     return (appData.families || []).filter(f => activeFamilyIds.has(f.id));
   }
 
-  // עדכון שערי חליפין בלייב באמצעות API התומך ב-CORS
   function fetchLiveRates(silent = false) {
     if(!silent) updateSyncStatus('מעדכן שערי חליפין...');
     
@@ -564,10 +562,8 @@
     const container = document.getElementById('expenseSharesContainer');
     container.innerHTML = '';
 
-    // מציג רק משפחות פעילות בלבד בטופס הוספה חדש
     let familiesToDisplay = getActiveFamilies();
 
-    // בעת עריכה - נוודא שגם משפחה שהייתה חלק מהוצאת העבר תוצג בעריכה
     if (overrideShares) {
       const historicalFamIds = Object.keys(overrideShares);
       const allFamsMap = new Map((appData.families || []).map(f => [f.id, f]));
@@ -862,11 +858,28 @@
       }
     });
 
+    // ----------------------------------------------------
+    // *** תיקון גרסה 2.4.9: סינון משפחות פעילות בהוצאות בפועל בלבד ***
+    // ----------------------------------------------------
+    const activeFamilies = appData.families.filter(f => {
+      const paid = familyPaid[f.id] || 0;
+      const share = familyShareTotal[f.id] || 0;
+      return paid > 0 || share > 0;
+    });
+
+    if (activeFamilies.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">אין משפחות פעילות בהוצאות</td></tr>';
+      totalsBox.innerHTML = 'ממתין להזנת הוצאות...';
+      familySharesBox.innerHTML = 'אין נתונים לחלוקה';
+      settlementBox.innerHTML = '<div class="empty-msg">אין חובות לאיזון</div>';
+      return;
+    }
+
     let html = '';
     let balances = [];
     let familySharesHtml = [];
 
-    appData.families.forEach(f => {
+    activeFamilies.forEach(f => {
       const paid = familyPaid[f.id] || 0;
       const exactShareAmount = familyShareTotal[f.id] || 0;
       
