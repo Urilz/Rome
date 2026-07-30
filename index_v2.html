@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.3)</title>
+  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.4)</title>
   <style>
     :root {
       --bg-main: #fdf5e6;
@@ -119,6 +119,10 @@
       width: 100%; padding: 12px; background: var(--primary-brown); color: #fff;
       border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px;
     }
+    .btn-reset {
+      width: 100%; padding: 12px; background: var(--danger-red); color: #fff;
+      border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px;
+    }
 
     /* כפתור רענון אייקון */
     .btn-refresh-icon {
@@ -150,12 +154,22 @@
 
     .empty-state { text-align: center; color: var(--accent-orange); font-size: 0.85rem; padding: 10px; }
 
-    /* סיכום */
+    /* סיכום והתחשבנות סופית */
     .summary-line {
-      display: flex; justify-content: space-between; font-size: 0.88rem; padding: 6px 0;
+      display: flex; justify-content: space-between; font-size: 0.95rem; padding: 6px 0;
       border-bottom: 1px dashed #dcc8b1; color: var(--primary-brown);
     }
-    .settlement-box { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--accent-orange); text-align: center; }
+    .settlement-box { 
+      margin-top: 15px; 
+      padding: 15px 10px; 
+      border-top: 3px solid var(--accent-orange); 
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--primary-brown);
+      background: #fff8ee;
+      border-radius: 8px;
+    }
 
     .btn-action { background: none; border: none; cursor: pointer; font-size: 0.9rem; margin: 0 2px; }
     .btn-danger { color: var(--danger-red); }
@@ -181,7 +195,7 @@
   </div>
 
   <div class="app-title">
-    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.3)</span></h1>
+    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.4)</span></h1>
     <p>ניהול הוצאות משותפות</p>
   </div>
 
@@ -213,7 +227,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>סכום (ספרות בלבד) *</label>
-            <input type="number" id="exp-amount" min="1" step="1" placeholder="0" oninput="validateDigits(this)" required>
+            <input type="number" id="exp-amount" min="1" step="1" placeholder="" oninput="validateDigits(this)" required>
           </div>
           <div class="form-group">
             <label>מטבע *</label>
@@ -329,7 +343,7 @@
       </div>
 
       <div class="settlement-box">
-        <div id="settlement-text" class="empty-state">אין עדיין הוצאות</div>
+        <div id="settlement-text">אין עדיין הוצאות</div>
       </div>
     </div>
   </div>
@@ -377,6 +391,12 @@
           </thead>
           <tbody id="adminUsersTableBody"></tbody>
         </table>
+
+        <div style="margin-top: 25px; border-top: 2px dashed var(--danger-red); padding-top: 15px;">
+          <h4 style="color:var(--danger-red); margin-top:0;">איפוס מערכת:</h4>
+          <p style="font-size: 0.85rem; color: #666; margin: 0 0 10px 0;">מחיקת כל הנתונים, הניקוי ימחוק את כל ההוצאות ויחזיר את המערכת להגדרות ברירת המחדל.</p>
+          <button type="button" class="btn-reset" onclick="resetToDefaults()">מחק הכל וחזור להגדרות ברירת מחדל</button>
+        </div>
       </div>
     </div>
   </div>
@@ -389,7 +409,7 @@
   let selectedUserId = null;
   let isAdminAuthenticated = false;
 
-  let appData = {
+  const DEFAULT_APP_DATA = {
     families: [
       { id: 'FAM_1', name: 'בן רחמים' },
       { id: 'FAM_2', name: 'לזרובסקי' }
@@ -403,6 +423,8 @@
     rates: { EUR: 4.00, USD: 4.00 },
     expenses: []
   };
+
+  let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
 
   document.addEventListener("DOMContentLoaded", () => {
     initDateLimits();
@@ -569,7 +591,7 @@
     const date = document.getElementById('exp-date').value;
     const editId = document.getElementById('editing-exp-id').value;
 
-    if (!desc || !amount || !currency || !date) {
+    if (!desc || isNaN(amount) || amount <= 0 || !currency || !date) {
       alert("כל שדות ההוצאה הם שדות חובה");
       return;
     }
@@ -578,6 +600,8 @@
 
     const share1 = parseFloat(document.getElementById('share-fam1').value) || 50;
     const share2 = parseFloat(document.getElementById('share-fam2').value) || 50;
+    const now = new Date();
+    const timeStr = `${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})}`;
 
     if (editId) {
       const exp = appData.expenses.find(x => x.id === editId);
@@ -597,7 +621,8 @@
         id: 'EXP_' + Date.now(),
         date, desc, amount, currency,
         payerId: selectedUserId,
-        shares: { FAM_1: share1, FAM_2: share2 }
+        shares: { FAM_1: share1, FAM_2: share2 },
+        reportTime: timeStr
       };
       if (!appData.expenses) appData.expenses = [];
       appData.expenses.push(newExpense);
@@ -645,6 +670,14 @@
 
     appData.expenses = appData.expenses.filter(exp => exp.id !== id);
     saveDataToSheet();
+  }
+
+  function resetToDefaults() {
+    if (confirm("האם אתה בטוח שברצונך למחוק את כל הנתונים ולחזור להגדרות ברירת המחדל? פעולה זו אינה ניתנת לבטול.")) {
+      appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
+      saveDataToSheet();
+      alert("המערכת אופסה בהצלחה להגדרות ברירת המחדל.");
+    }
   }
 
   function toggleFamilyDetails(famId) {
