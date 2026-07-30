@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.1)</title>
+  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.2)</title>
   <style>
     :root {
       --bg-main: #fdf5e6;
@@ -177,7 +177,7 @@
   </div>
 
   <div class="app-title">
-    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.1)</span></h1>
+    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.2)</span></h1>
     <p>ניהול הוצאות משותפות</p>
   </div>
 
@@ -407,7 +407,6 @@
     document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
   });
 
-  // הגדרת תאריך ברירת מחדל והגבלת חודשיים אחורה
   function initDateLimits() {
     const today = new Date();
     const twoMonthsAgo = new Date();
@@ -419,7 +418,6 @@
     dateInput.max = today.toISOString().split('T')[0];
   }
 
-  // המרת תאריך ל-DD/MM/YYYY
   function formatDateDDMMYYYY(dateString) {
     if (!dateString) return '';
     const parts = dateString.split('-');
@@ -429,7 +427,6 @@
     return dateString;
   }
 
-  // פורמט מספרים עם פסיקים
   function formatNumber(num) {
     return Math.round(num).toLocaleString('he-IL');
   }
@@ -475,7 +472,6 @@
     });
   }
 
-  // רענון שערי חליפין בלייב עם חיווי ויזואלי
   async function fetchLiveRates() {
     const btn = document.getElementById('btn-refresh-rates');
     const statusText = document.getElementById('rates-status-text');
@@ -744,7 +740,6 @@
       ];
 
       fams.forEach(f => {
-        // סינון הוצאות המשפחה
         const familyExpenses = appData.expenses.filter(exp => {
           const user = appData.users.find(u => u.id === exp.payerId);
           return user && user.familyId === f.id;
