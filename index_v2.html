@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.5.0)</title>
+  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.0)</title>
   <style>
     :root {
       --bg-main: #fdf5e6;
@@ -35,6 +35,34 @@
     .app-title { text-align: center; margin-bottom: 15px; }
     .app-title h1 { margin: 0; font-size: 1.8rem; color: var(--primary-brown); font-weight: bold; }
     .app-title p { margin: 2px 0 0; font-size: 0.85rem; color: #7a685a; }
+
+    /* ניווט בלשוניות (טאבים) */
+    .nav-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--card-border);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: var(--light-gold);
+      border: 1px solid var(--card-border);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      font-weight: bold;
+      color: var(--primary-brown);
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+    .tab-btn.active {
+      background: var(--accent-orange);
+      color: #fff;
+      border-color: var(--accent-orange);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     /* כרטיסיות משפחות */
     .families-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -72,6 +100,22 @@
     }
     .user-btn.active { background: var(--accent-orange); color: #fff; border-color: var(--accent-orange); font-weight: bold; }
 
+    /* תצוגת אחוזים רציפה */
+    .shares-container {
+      background: #f7efe2;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #e0cfb9;
+      margin-top: 5px;
+    }
+    .shares-inputs {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      justify-content: space-around;
+      margin-top: 5px;
+    }
+
     /* לחצן הוספה */
     .btn-submit {
       width: 100%; padding: 12px; background: var(--primary-brown); color: #fff;
@@ -93,14 +137,6 @@
     }
     .settlement-box { margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--accent-orange); text-align: center; }
 
-    .share-options { display: flex; gap: 5px; margin-top: 5px; }
-    .share-btn { flex: 1; padding: 6px; font-size: 0.8rem; border: 1px solid #dcc8b1; background: #fff; border-radius: 4px; cursor: pointer; }
-    .share-btn.active { border-color: var(--accent-orange); color: var(--accent-orange); font-weight: bold; }
-
-    /* ממשק ניהול */
-    .admin-link { text-align: center; margin-top: 20px; font-size: 0.8rem; }
-    .admin-link a { color: var(--primary-brown); text-decoration: underline; cursor: pointer; }
-    .admin-panel { display: none; margin-top: 15px; border-top: 2px dashed #dcc8b1; padding-top: 15px; }
     .btn-danger { background: var(--danger-red); color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; }
   </style>
 </head>
@@ -112,185 +148,196 @@
   </div>
 
   <div class="app-title">
-    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.5.0)</span></h1>
+    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.0)</span></h1>
     <p>ניהול הוצאות משותפות</p>
   </div>
 
-  <!-- כרטיסיות משפחות -->
-  <div class="families-grid" id="families-grid-container"></div>
-
-  <!-- טופס הוספת הוצאה -->
-  <div class="card">
-    <div class="card-title">הוספת הוצאה</div>
-    <form id="expense-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label>תאריך *</label>
-          <input type="date" id="exp-date" required>
-        </div>
-        <div class="form-group">
-          <label>תיאור ההוצאה (עברית בלבד) *</label>
-          <input type="text" id="exp-desc" placeholder="לדוגמה: מסעדה, דלק" oninput="validateHebrew(this)" required>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>סכום (ספרות בלבד) *</label>
-          <input type="number" id="exp-amount" min="1" step="1" placeholder="0" oninput="validateDigits(this)" required>
-        </div>
-        <div class="form-group">
-          <label>מטבע *</label>
-          <select id="exp-currency" required>
-            <option value="ILS">₪ (שקל)</option>
-            <option value="USD">$ (דולר)</option>
-            <option value="EUR">€ (אירו)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 10px;">
-        <label>מי שילם/ה? *</label>
-        <div class="users-selection" id="users-selection-container"></div>
-      </div>
-
-      <div class="form-group">
-        <label>חלוקת תשלום *</label>
-        <div class="share-options">
-          <button type="button" class="share-btn active" id="btn-equal" onclick="setEqualShare()">שווה / שווה</button>
-          <button type="button" class="share-btn" id="btn-custom" onclick="toggleCustomShare()">מוגדר</button>
-        </div>
-        <div id="custom-shares-div" style="display:none; margin-top: 8px;">
-          <div style="display:flex; gap: 10px; align-items:center;">
-            <span>בן רחמים: <input type="number" id="share-fam1" value="50" min="0" max="100" style="width:60px;">%</span>
-            <span>לזרובסקי: <input type="number" id="share-fam2" value="50" min="0" max="100" style="width:60px;">%</span>
-          </div>
-        </div>
-      </div>
-
-      <button type="submit" class="btn-submit">הוסף הוצאה</button>
-    </form>
+  <!-- ניווט בטאבים -->
+  <div class="nav-tabs">
+    <button type="button" class="tab-btn active" onclick="switchTab('tab-expenses')">הוספת ניהול הוצאות</button>
+    <button type="button" class="tab-btn" onclick="switchTab('tab-admin')">ממשק ניהול (מוגן)</button>
   </div>
 
-  <!-- הוצאות ששולמו -->
-  <div class="card">
-    <div class="card-title">הוצאות ששולמו</div>
-    <table>
-      <thead>
-        <tr>
-          <th>תאריך</th>
-          <th>תיאור</th>
-          <th>סכום במקור</th>
-          <th>מטבע</th>
-          <th>סכום ב-₪</th>
-          <th>משלם</th>
-          <th>חלוקה</th>
-          <th>פעולות</th>
-        </tr>
-      </thead>
-      <tbody id="expensesTableBody">
-        <tr><td colspan="8" class="empty-state">אין עדיין הוצאות</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- טאב 1: ניהול הוצאות -->
+  <div id="tab-expenses" class="tab-content active">
+    <!-- כרטיסיות משפחות -->
+    <div class="families-grid" id="families-grid-container"></div>
 
-  <!-- שערי המרה -->
-  <div class="card">
-    <div class="card-title">שערי המרה (לפי ₪)</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>אירו (€)</label>
-        <input type="number" id="rate-eur" value="4" step="1" min="1" oninput="validateDigits(this)" onchange="updateRates()">
-      </div>
-      <div class="form-group">
-        <label>דולר ($)</label>
-        <input type="number" id="rate-usd" value="4" step="1" min="1" oninput="validateDigits(this)" onchange="updateRates()">
-      </div>
-    </div>
-  </div>
-
-  <!-- סיכום חשבון חודשי -->
-  <div class="card">
-    <div class="card-title">סיכום חשבון חודשי וסיום חישוב</div>
-    <table>
-      <thead>
-        <tr>
-          <th>משפחה</th>
-          <th>שילמה בפועל (₪)</th>
-          <th>חלק בהוצאות (₪)</th>
-          <th>מאזן / הפרש (₪)</th>
-        </tr>
-      </thead>
-      <tbody id="summaryTableBody">
-        <tr><td colspan="4" class="empty-state">אין עדיין נתונים לחישוב</td></tr>
-      </tbody>
-    </table>
-
-    <div style="margin-top: 15px;">
-      <div class="summary-line">
-        <span>סה"כ הוצאות גלובלי:</span>
-        <span id="total-global">₪ 0</span>
-      </div>
-      <div class="summary-line">
-        <span>סה"כ שילמה משפחת בן רחמים:</span>
-        <span id="total-fam1">₪ 0</span>
-      </div>
-      <div class="summary-line">
-        <span>סה"כ שילמה משפחת לזרובסקי:</span>
-        <span id="total-fam2">₪ 0</span>
-      </div>
-    </div>
-
-    <div class="settlement-box">
-      <div id="settlement-text" class="empty-state">אין עדיין הוצאות</div>
-    </div>
-  </div>
-
-  <!-- ממשק ניהול מוגן סיסמה -->
-  <div class="admin-link">
-    <a onclick="toggleAdminPanel()">ניהול משתמשים (מוגן בסיסמה)</a>
-  </div>
-
-  <div id="admin-panel" class="card admin-panel">
-    <div class="card-title">ניהול משתמשים במערכת</div>
-    <div id="admin-auth">
-      <div class="form-group">
-        <label>הכנס סיסמת מנהל:</label>
-        <input type="password" id="admin-pass-input" style="padding: 8px; border: 1px solid #dcc8b1; border-radius: 6px;">
-        <button type="button" class="btn-submit" onclick="loginAdmin()" style="margin-top: 5px;">אמת סיסמה</button>
-      </div>
-    </div>
-
-    <div id="admin-content" style="display:none;">
-      <div style="margin-bottom: 15px;">
-        <h4>הוספת משתמש חדש:</h4>
+    <!-- טופס הוספת הוצאה -->
+    <div class="card">
+      <div class="card-title">הוספת הוצאה</div>
+      <form id="expense-form">
         <div class="form-row">
           <div class="form-group">
-            <label>שם פרטי (עברית בלבד)</label>
-            <input type="text" id="new-user-name" oninput="validateHebrew(this)">
+            <label>תאריך *</label>
+            <input type="date" id="exp-date" required>
           </div>
           <div class="form-group">
-            <label>משפחה</label>
-            <select id="new-user-fam">
-              <option value="FAM_1">בן רחמים</option>
-              <option value="FAM_2">לזרובסקי</option>
+            <label>תיאור ההוצאה (עברית בלבד) *</label>
+            <input type="text" id="exp-desc" placeholder="לדוגמה: מסעדה, דלק" oninput="validateHebrew(this)" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>סכום (ספרות בלבד) *</label>
+            <input type="number" id="exp-amount" min="1" step="1" placeholder="0" oninput="validateDigits(this)" required>
+          </div>
+          <div class="form-group">
+            <label>מטבע *</label>
+            <select id="exp-currency" required>
+              <option value="ILS">₪ (שקל)</option>
+              <option value="USD">$ (דולר)</option>
+              <option value="EUR">€ (אירו)</option>
             </select>
           </div>
         </div>
-        <button type="button" class="btn-submit" onclick="addUser()">הוסף משתמש</button>
-      </div>
 
-      <h4>משתמשים קיימים:</h4>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label>מי שילם/ה? *</label>
+          <div class="users-selection" id="users-selection-container"></div>
+        </div>
+
+        <!-- חלוקת אחוזים רציפה (ברירת מחדל 50:50) -->
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label>חלוקת תשלום באחוזים (ברירת מחדל 50:50) *</label>
+          <div class="shares-container">
+            <div class="shares-inputs">
+              <div>
+                <span>בן רחמים: </span>
+                <input type="number" id="share-fam1" value="50" min="0" max="100" style="width:60px;" oninput="syncShares('fam1')">%
+              </div>
+              <div>
+                <span>לזרובסקי: </span>
+                <input type="number" id="share-fam2" value="50" min="0" max="100" style="width:60px;" oninput="syncShares('fam2')">%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- שערי המרה - ממוקמים לפני כפתור הוספת ההוצאה -->
+        <div style="background: #fdf8f0; padding: 10px; border-radius: 8px; border: 1px dashed #dcc8b1; margin-bottom: 10px;">
+          <label style="display:block; margin-bottom:5px; color:var(--accent-orange);">שערי המרה עדכניים (לפי ₪) *</label>
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="form-group">
+              <label>אירו (€)</label>
+              <input type="number" id="rate-eur" value="4" step="1" min="1" oninput="validateDigits(this)" onchange="updateRates()">
+            </div>
+            <div class="form-group">
+              <label>דולר ($)</label>
+              <input type="number" id="rate-usd" value="4" step="1" min="1" oninput="validateDigits(this)" onchange="updateRates()">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit">הוסף הוצאה</button>
+      </form>
+    </div>
+
+    <!-- הוצאות ששולמו -->
+    <div class="card">
+      <div class="card-title">הוצאות ששולמו</div>
       <table>
         <thead>
           <tr>
-            <th>שם פרטי</th>
-            <th>משפחה</th>
-            <th>פעולה</th>
+            <th>תאריך</th>
+            <th>תיאור</th>
+            <th>סכום במקור</th>
+            <th>מטבע</th>
+            <th>סכום ב-₪</th>
+            <th>משלם</th>
+            <th>חלוקה</th>
+            <th>פעולות</th>
           </tr>
         </thead>
-        <tbody id="adminUsersTableBody"></tbody>
+        <tbody id="expensesTableBody">
+          <tr><td colspan="8" class="empty-state">אין עדיין הוצאות</td></tr>
+        </tbody>
       </table>
+    </div>
+
+    <!-- סיכום חשבון חודשי -->
+    <div class="card">
+      <div class="card-title">סיכום חשבון חודשי וסיום חישוב</div>
+      <table>
+        <thead>
+          <tr>
+            <th>משפחה</th>
+            <th>שילמה בפועל (₪)</th>
+            <th>חלק בהוצאות (₪)</th>
+            <th>מאזן / הפרש (₪)</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody">
+          <tr><td colspan="4" class="empty-state">אין עדיין נתונים לחישוב</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 15px;">
+        <div class="summary-line">
+          <span>סה"כ הוצאות גלובלי:</span>
+          <span id="total-global">₪ 0</span>
+        </div>
+        <div class="summary-line">
+          <span>סה"כ שילמה משפחת בן רחמים:</span>
+          <span id="total-fam1">₪ 0</span>
+        </div>
+        <div class="summary-line">
+          <span>סה"כ שילמה משפחת לזרובסקי:</span>
+          <span id="total-fam2">₪ 0</span>
+        </div>
+      </div>
+
+      <div class="settlement-box">
+        <div id="settlement-text" class="empty-state">אין עדיין הוצאות</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- טאב 2: ממשק ניהול -->
+  <div id="tab-admin" class="tab-content">
+    <div class="card">
+      <div class="card-title">ממשק ניהול משתמשים (מוגן בסיסמה)</div>
+      
+      <div id="admin-auth">
+        <div class="form-group">
+          <label>הכנס סיסמת מנהל:</label>
+          <input type="password" id="admin-pass-input" style="padding: 8px; border: 1px solid #dcc8b1; border-radius: 6px;">
+          <button type="button" class="btn-submit" onclick="loginAdmin()" style="margin-top: 5px;">אמת סיסמה</button>
+        </div>
+      </div>
+
+      <div id="admin-content" style="display:none;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #e0cfb9; padding-bottom: 15px;">
+          <h4 style="margin-top:0; color:var(--primary-brown);">הוספת משתמש חדש:</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>שם פרטי (עברית בלבד)</label>
+              <input type="text" id="new-user-name" oninput="validateHebrew(this)">
+            </div>
+            <div class="form-group">
+              <label>משפחה</label>
+              <select id="new-user-fam">
+                <option value="FAM_1">בן רחמים</option>
+                <option value="FAM_2">לזרובסקי</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" class="btn-submit" onclick="addUser()">הוסף משתמש</button>
+        </div>
+
+        <h4 style="color:var(--primary-brown);">משתמשים קיימים במערכת:</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>שם פרטי</th>
+              <th>משפחה</th>
+              <th>פעולה</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -323,6 +370,19 @@
     document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
   });
 
+  // מעבר בין טאבים
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    if (tabId === 'tab-expenses') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    } else {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    }
+    document.getElementById(tabId).classList.add('active');
+  }
+
   // ולידציות תווים וספרות
   function validateHebrew(input) {
     input.value = input.value.replace(/[^א-ת\s]/g, '');
@@ -332,25 +392,26 @@
     input.value = input.value.replace(/[^0-9]/g, '');
   }
 
+  // סנכרון שדות האחוזים
+  function syncShares(changed) {
+    const fam1Input = document.getElementById('share-fam1');
+    const fam2Input = document.getElementById('share-fam2');
+    if (changed === 'fam1') {
+      let val = parseFloat(fam1Input.value) || 0;
+      if (val > 100) val = 100;
+      fam2Input.value = 100 - val;
+    } else {
+      let val = parseFloat(fam2Input.value) || 0;
+      if (val > 100) val = 100;
+      fam1Input.value = 100 - val;
+    }
+  }
+
   function selectUser(userId) {
     selectedUserId = userId;
     document.querySelectorAll('.user-btn').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-user-id') === userId);
     });
-  }
-
-  function setEqualShare() {
-    document.getElementById('btn-equal').classList.add('active');
-    document.getElementById('btn-custom').classList.remove('active');
-    document.getElementById('custom-shares-div').style.display = 'none';
-    document.getElementById('share-fam1').value = 50;
-    document.getElementById('share-fam2').value = 50;
-  }
-
-  function toggleCustomShare() {
-    document.getElementById('btn-custom').classList.add('active');
-    document.getElementById('btn-equal').classList.remove('active');
-    document.getElementById('custom-shares-div').style.display = 'block';
   }
 
   async function loadDataFromSheet() {
@@ -407,6 +468,9 @@
       return;
     }
 
+    // עדכון שערי המרה
+    updateRates();
+
     const share1 = parseFloat(document.getElementById('share-fam1').value) || 50;
     const share2 = parseFloat(document.getElementById('share-fam2').value) || 50;
 
@@ -422,8 +486,9 @@
 
     document.getElementById('exp-desc').value = '';
     document.getElementById('exp-amount').value = '';
+    document.getElementById('share-fam1').value = 50;
+    document.getElementById('share-fam2').value = 50;
     selectUser(null);
-    setEqualShare();
 
     saveDataToSheet();
   }
@@ -438,7 +503,7 @@
     document.getElementById('rate-eur').value = Math.round(appData.rates.EUR || 4);
     document.getElementById('rate-usd').value = Math.round(appData.rates.USD || 4);
 
-    // כרטיסיות משפחות עליונות
+    // כרטיסיות משפחות
     const famContainer = document.getElementById('families-grid-container');
     famContainer.innerHTML = '';
     (appData.families || []).forEach(fam => {
@@ -478,6 +543,8 @@
         const userName = user ? user.firstName : 'לא ידוע';
         const rate = exp.currency === 'ILS' ? 1 : Math.round(appData.rates[exp.currency] || 1);
         const amountILS = Math.round(exp.amount * rate);
+        const share1 = exp.shares ? exp.shares.FAM_1 : 50;
+        const share2 = exp.shares ? exp.shares.FAM_2 : 50;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -487,7 +554,7 @@
           <td>${exp.currency}</td>
           <td>₪${amountILS}</td>
           <td>${userName}</td>
-          <td>50/50</td>
+          <td>${share1}/${share2}</td>
           <td><button onclick="deleteExpense('${exp.id}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></td>
         `;
         tbody.appendChild(tr);
@@ -559,11 +626,6 @@
   }
 
   // --- לוגיקת ממשק מנהל ---
-  function toggleAdminPanel() {
-    const p = document.getElementById('admin-panel');
-    p.style.display = p.style.display === 'block' ? 'none' : 'block';
-  }
-
   function loginAdmin() {
     const pass = document.getElementById('admin-pass-input').value;
     if (pass === '7350') {
