@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.4)</title>
+  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.5)</title>
   <style>
     :root {
       --bg-main: #fdf5e6;
@@ -195,7 +195,7 @@
   </div>
 
   <div class="app-title">
-    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.4)</span></h1>
+    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.5)</span></h1>
     <p>ניהול הוצאות משותפות</p>
   </div>
 
@@ -558,6 +558,7 @@
 
   async function saveDataToSheet() {
     document.getElementById('sync-status').innerText = "שומר...";
+    renderUI(); // עדכון מידי של התצוגה המקומית
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
@@ -566,7 +567,6 @@
         body: JSON.stringify(appData)
       });
       document.getElementById('sync-status').innerText = "מסונכרן לגיליון";
-      renderUI();
     } catch (err) {
       document.getElementById('sync-status').innerText = "שגיאה בשמירה";
     }
@@ -596,7 +596,8 @@
       return;
     }
 
-    updateRates();
+    appData.rates.EUR = parseFloat(document.getElementById('rate-eur').value) || 4.00;
+    appData.rates.USD = parseFloat(document.getElementById('rate-usd').value) || 4.00;
 
     const share1 = parseFloat(document.getElementById('share-fam1').value) || 50;
     const share2 = parseFloat(document.getElementById('share-fam2').value) || 50;
