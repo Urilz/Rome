@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.2)</title>
+  <title>רומא ודרומה - ניהול הוצאות משותפות (גרסה 2.6.3)</title>
   <style>
     :root {
       --bg-main: #fdf5e6;
@@ -122,13 +122,17 @@
 
     /* כפתור רענון אייקון */
     .btn-refresh-icon {
-      background: none; border: none; font-size: 1.2rem; cursor: pointer;
+      background: #fff; border: 1px solid #dcc8b1; font-size: 1.2rem; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      transition: transform 0.3s;
-      padding: 2px 6px;
+      transition: transform 0.3s, background-color 0.2s;
+      padding: 4px 8px; border-radius: 6px; user-select: none;
     }
+    .btn-refresh-icon:hover { background-color: #f0e2cd; }
+    .btn-refresh-icon:active { transform: scale(0.95); }
     .btn-refresh-icon.spinning {
       animation: spin 1s infinite linear;
+      pointer-events: none;
+      opacity: 0.6;
     }
     @keyframes spin {
       from { transform: rotate(0deg); }
@@ -177,7 +181,7 @@
   </div>
 
   <div class="app-title">
-    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.2)</span></h1>
+    <h1>רומא ודרומה <span style="font-size: 1rem; font-weight: normal; color: #7a685a;">(גרסה 2.6.3)</span></h1>
     <p>ניהול הוצאות משותפות</p>
   </div>
 
@@ -256,11 +260,11 @@
           <div class="form-row" style="margin-bottom:0; margin-top:8px;">
             <div class="form-group">
               <label>אירו (€)</label>
-              <input type="number" id="rate-eur" value="4" step="1" min="1" oninput="validateDigits(this)" onchange="updateRates()">
+              <input type="number" id="rate-eur" value="4.00" step="0.01" min="0.01" onchange="updateRates()">
             </div>
             <div class="form-group">
               <label>דולר ($)</label>
-              <input type="number" id="rate-usd" value="4" step="1" min="1" oninput="validateDigits(this)" onchange="updateRates()">
+              <input type="number" id="rate-usd" value="4.00" step="0.01" min="0.01" onchange="updateRates()">
             </div>
           </div>
         </div>
@@ -396,7 +400,7 @@
       { id: 'U_3', firstName: 'אורי', lastName: 'לזרובסקי', familyId: 'FAM_2' },
       { id: 'U_4', firstName: 'אדוה', lastName: 'לזרובסקי', familyId: 'FAM_2' }
     ],
-    rates: { EUR: 4, USD: 4 },
+    rates: { EUR: 4.00, USD: 4.00 },
     expenses: []
   };
 
@@ -429,6 +433,10 @@
 
   function formatNumber(num) {
     return Math.round(num).toLocaleString('he-IL');
+  }
+
+  function formatRate(num) {
+    return parseFloat(num || 0).toFixed(2);
   }
 
   function switchTab(tabId) {
@@ -485,17 +493,17 @@
       const data = await response.json();
 
       if (data && data.rates && data.rates.ILS && data.rates.USD) {
-        const eurRate = Math.round(data.rates.ILS);
-        const usdRate = Math.round(data.rates.ILS / data.rates.USD);
+        const responseTime = new Date();
+        const eurRate = parseFloat(data.rates.ILS.toFixed(2));
+        const usdRate = parseFloat((data.rates.ILS / data.rates.USD).toFixed(2));
 
         appData.rates.EUR = eurRate;
         appData.rates.USD = usdRate;
 
-        document.getElementById('rate-eur').value = eurRate;
-        document.getElementById('rate-usd').value = usdRate;
+        document.getElementById('rate-eur').value = formatRate(eurRate);
+        document.getElementById('rate-usd').value = formatRate(usdRate);
 
-        const now = new Date();
-        const timeStr = `${now.toLocaleDateString('he-IL')} ${now.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})}`;
+        const timeStr = `${responseTime.toLocaleDateString('he-IL')} ${responseTime.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})}`;
         
         statusText.innerText = `עדכון תקין - נכון ל-${timeStr}`;
         statusText.style.color = "green";
@@ -543,8 +551,8 @@
   }
 
   function updateRates() {
-    appData.rates.EUR = Math.round(parseFloat(document.getElementById('rate-eur').value)) || 4;
-    appData.rates.USD = Math.round(parseFloat(document.getElementById('rate-usd').value)) || 4;
+    appData.rates.EUR = parseFloat(document.getElementById('rate-eur').value) || 4.00;
+    appData.rates.USD = parseFloat(document.getElementById('rate-usd').value) || 4.00;
     saveDataToSheet();
   }
 
@@ -642,6 +650,8 @@
   function toggleFamilyDetails(famId) {
     const detailsRow = document.getElementById(`details-${famId}`);
     const btn = document.getElementById(`btn-toggle-${famId}`);
+    if (!detailsRow || !btn) return;
+
     if (detailsRow.classList.contains('active')) {
       detailsRow.classList.remove('active');
       btn.innerText = '+';
@@ -652,8 +662,8 @@
   }
 
   function renderUI() {
-    document.getElementById('rate-eur').value = Math.round(appData.rates.EUR || 4);
-    document.getElementById('rate-usd').value = Math.round(appData.rates.USD || 4);
+    document.getElementById('rate-eur').value = formatRate(appData.rates.EUR || 4.00);
+    document.getElementById('rate-usd').value = formatRate(appData.rates.USD || 4.00);
 
     const usersContainer = document.getElementById('users-selection-container');
     usersContainer.innerHTML = '';
@@ -676,7 +686,7 @@
       appData.expenses.forEach(exp => {
         const user = appData.users.find(u => u.id === exp.payerId);
         const userName = user ? user.firstName : 'לא ידוע';
-        const rate = exp.currency === 'ILS' ? 1 : Math.round(appData.rates[exp.currency] || 1);
+        const rate = exp.currency === 'ILS' ? 1 : (parseFloat(appData.rates[exp.currency]) || 1);
         const amountILS = Math.round(exp.amount * rate);
         const share1 = exp.shares ? exp.shares.FAM_1 : 50;
         const share2 = exp.shares ? exp.shares.FAM_2 : 50;
@@ -712,7 +722,7 @@
     let globalTotal = 0;
 
     (appData.expenses || []).forEach(exp => {
-      const rate = exp.currency === 'ILS' ? 1 : Math.round(appData.rates[exp.currency] || 1);
+      const rate = exp.currency === 'ILS' ? 1 : (parseFloat(appData.rates[exp.currency]) || 1);
       const amountILS = Math.round(exp.amount * rate);
       globalTotal += amountILS;
 
@@ -745,15 +755,18 @@
           return user && user.familyId === f.id;
         });
 
+        const hasExpenses = familyExpenses.length > 0;
+        const toggleBtnHtml = hasExpenses 
+          ? `<button class="btn-expand" id="btn-toggle-${f.id}" onclick="toggleFamilyDetails('${f.id}')">+</button>`
+          : `<span style="display:inline-block; width:22px;"></span>`;
+
         let detailsHtml = `<table class="family-details-table">
           <thead><tr><th>תאריך</th><th>תיאור</th><th>משלם</th><th>סכום (₪)</th></tr></thead><tbody>`;
 
-        if (familyExpenses.length === 0) {
-          detailsHtml += `<tr><td colspan="4">אין הוצאות רשומות למשפחה זו</td></tr>`;
-        } else {
+        if (hasExpenses) {
           familyExpenses.forEach(exp => {
             const user = appData.users.find(u => u.id === exp.payerId);
-            const rate = exp.currency === 'ILS' ? 1 : Math.round(appData.rates[exp.currency] || 1);
+            const rate = exp.currency === 'ILS' ? 1 : (parseFloat(appData.rates[exp.currency]) || 1);
             const amountILS = Math.round(exp.amount * rate);
             detailsHtml += `<tr>
               <td>${formatDateDDMMYYYY(exp.date)}</td>
@@ -767,7 +780,7 @@
 
         summaryTbody.innerHTML += `
           <tr>
-            <td><button class="btn-expand" id="btn-toggle-${f.id}" onclick="toggleFamilyDetails('${f.id}')">+</button></td>
+            <td>${toggleBtnHtml}</td>
             <td><strong>${f.name}</strong></td>
             <td>₪${formatNumber(f.paid)}</td>
             <td>₪${formatNumber(f.req)}</td>
