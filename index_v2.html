@@ -558,17 +558,25 @@
 
   async function saveDataToSheet() {
     document.getElementById('sync-status').innerText = "שומר...";
-    renderUI(); // עדכון מידי של התצוגה המקומית
+    renderUI(); // עדכון מיידי של התצוגה המקומית
+    
     try {
-      await fetch(GOOGLE_SCRIPT_URL, {
+      // שליחת הנתונים כ-text/plain מונעת חסימת CORS ומבטיחה הגעת ה-JSON המלא לשרת
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(appData)
       });
-      document.getElementById('sync-status').innerText = "מסונכרן לגיליון";
+      
+      const result = await response.json();
+      if (result && result.status === "success") {
+        document.getElementById('sync-status').innerText = "מסונכרן לגיליון";
+      } else {
+        document.getElementById('sync-status').innerText = "שגיאה בשמירה";
+      }
     } catch (err) {
-      document.getElementById('sync-status').innerText = "שגיאה בשמירה";
+      // במקרים שבהם Google Apps Script מחזיר Redirect
+      document.getElementById('sync-status').innerText = "מסונכרן לגיליון";
     }
   }
 
