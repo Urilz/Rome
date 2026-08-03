@@ -267,7 +267,7 @@
             <label style="color:var(--accent-orange); margin:0;">
               שערי המרה עדכניים (לפי ₪) *
             </label>
-            <button type="button" class="btn-refresh-icon" id="btn-refresh-rates" onclick="fetchLiveRates()" title="רענן שערים">🔄</button>
+            <button type="button" class="btn-refresh-icon" id="btn-refresh-rates" onclick="fetchLiveRates(true)" title="רענן שערים">🔄</button>
           </div>
           <span class="rates-status" id="rates-status-text">טוען שערים...</span>
           
@@ -405,6 +405,7 @@
 
 <script>
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_9MzfMPKMVKfF9e-U11Hb3rhchcQz_OUxMR17HBsUGpmFrc9cz4DPuJRDx4pBik4QYg/exec";
+  const LOCAL_STORAGE_KEY = "roma_app_data_v2";
 
   let selectedUserId = null;
   let isAdminAuthenticated = false;
@@ -426,10 +427,12 @@
 
   let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     initDateLimits();
-    loadDataFromSheet();
-    fetchLiveRates();
+    // 1. קודם טוענים את הנתונים (מהשרת או מ-localStorage)
+    await loadDataFromSheet();
+    // 2. רק לאחר מכן מעדכנים שערים בלייב ללא שמירה דורסת לשרת
+    await fetchLiveRates(false);
     document.getElementById('expense-form').addEventListener('submit', handleAddExpense);
   });
 
@@ -502,13 +505,15 @@
     });
   }
 
-  async function fetchLiveRates() {
+  async function fetchLiveRates(shouldSave = true) {
     const btn = document.getElementById('btn-refresh-rates');
     const statusText = document.getElementById('rates-status-text');
     
-    btn.classList.add('spinning');
-    statusText.innerText = "מעדכן שערים...";
-    statusText.style.color = "#666";
+    if (btn) btn.classList.add('spinning');
+    if (statusText) {
+      statusText.innerText = "מעדכן שערים...";
+      statusText.style.color = "#666";
+    }
 
     try {
       const response = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
@@ -527,41 +532,63 @@
 
         const timeStr = `${responseTime.toLocaleDateString('he-IL')} ${responseTime.toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})}`;
         
-        statusText.innerText = `עדכון תקין - נכון ל-${timeStr}`;
-        statusText.style.color = "green";
-        saveDataToSheet();
+        if (statusText) {
+          statusText.innerText = `עדכון תקין - נכון ל-${timeStr}`;
+          statusText.style.color = "green";
+        }
+
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appData));
+
+        if (shouldSave) {
+          saveDataToSheet();
+        } else {
+          renderUI();
+        }
       } else {
         throw new Error('שגיאה בנתונים');
       }
     } catch (e) {
-      statusText.innerText = "שגיאה בעדכון השערים (משתמש בשערים קיימים)";
-      statusText.style.color = "red";
+      if (statusText) {
+        statusText.innerText = "שגיאה בעדכון השערים (משתמש בשערים קיימים)";
+        statusText.style.color = "red";
+      }
     } finally {
-      btn.classList.remove('spinning');
+      if (btn) btn.classList.remove('spinning');
     }
   }
 
   async function loadDataFromSheet() {
     document.getElementById('sync-status').innerText = "מסתנכרן...";
+    
+    // טעינה מקומית מיידית מ-localStorage לגיבוי
+    const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (localData) {
+      try {
+        appData = JSON.parse(localData);
+        renderUI();
+      } catch (e) {}
+    }
+
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL);
       const data = await res.json();
-      if (data && data.families) {
+      if (data && data.families && Array.isArray(data.expenses)) {
         appData = data;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appData));
       }
       document.getElementById('sync-status').innerText = "מסונכרן לגיליון";
       renderUI();
     } catch (err) {
-      document.getElementById('sync-status').innerText = "שגיאה בסנכרון";
+      document.getElementById('sync-status').innerText = "שגיאה בסנכרון (מוצג גיבוי מקומי)";
     }
   }
 
   async function saveDataToSheet() {
     document.getElementById('sync-status').innerText = "שומר...";
-    renderUI(); // עדכון מיידי של התצוגה המקומית
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appData));
+    renderUI();
     
     try {
-      // שליחת הנתונים כ-text/plain מונעת חסימת CORS ומבטיחה הגעת ה-JSON המלא לשרת
       const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -575,7 +602,6 @@
         document.getElementById('sync-status').innerText = "שגיאה בשמירה";
       }
     } catch (err) {
-      // במקרים שבהם Google Apps Script מחזיר Redirect
       document.getElementById('sync-status').innerText = "מסונכרן לגיליון";
     }
   }
@@ -684,6 +710,7 @@
   function resetToDefaults() {
     if (confirm("האם אתה בטוח שברצונך למחוק את כל הנתונים ולחזור להגדרות ברירת המחדל? פעולה זו אינה ניתנת לבטול.")) {
       appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
       saveDataToSheet();
       alert("המערכת אופסה בהצלחה להגדרות ברירת המחדל.");
     }
